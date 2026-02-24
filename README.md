@@ -39,5 +39,18 @@ Step 1 :
  git checkout -b dev
 
 Step 2 :
+git pull origin develop
+
+Step 3 :
 git checkout -b "branch_name"
+
+Step 4 :
+git add "file name"
+
+Step 5 :
+git commit -m "message of commit "
+
+step 6 :
+git push -u origin "your branch name"
+
 
