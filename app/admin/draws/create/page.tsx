@@ -83,13 +83,13 @@ export default function CreateDrawPage() {
 
       <div className="grid grid-cols-2 gap-8">
         {/* LEFT: FORM */}
-        <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8 space-y-6">
-          <h2 className="text-[20px] font-bold text-[#e8edf3]">
+        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-8 space-y-6">
+          <h2 className="text-[20px] font-bold text-[#111827]">
             Create New Draw
           </h2>
 
           <div>
-            <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
               Draw Name
             </label>
             <input
@@ -98,19 +98,19 @@ export default function CreateDrawPage() {
               value={formData.drawName}
               onChange={handleInputChange}
               placeholder="e.g., Mega Millions #4822"
-              className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors placeholder:text-[#4a5568]"
+              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280]"
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
               Game Type
             </label>
             <select
               name="gameType"
               value={formData.gameType}
               onChange={handleInputChange}
-              className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
             >
               <option>Mega Millions</option>
               <option>Super Jackpot</option>
@@ -122,7 +122,7 @@ export default function CreateDrawPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                 Prize Pool ₹
               </label>
               <input
@@ -130,11 +130,11 @@ export default function CreateDrawPage() {
                 name="prizePool"
                 value={formData.prizePool}
                 onChange={handleInputChange}
-                className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                 Ticket Price ₹
               </label>
               <input
@@ -142,13 +142,13 @@ export default function CreateDrawPage() {
                 name="ticketPrice"
                 value={formData.ticketPrice}
                 onChange={handleInputChange}
-                className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
               Max Entries
             </label>
             <input
@@ -156,7 +156,7 @@ export default function CreateDrawPage() {
               name="maxEntries"
               value={formData.maxEntries}
               onChange={handleInputChange}
-              className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
             />
           </div>
 
@@ -168,14 +168,14 @@ export default function CreateDrawPage() {
               onChange={handleInputChange}
               className="cursor-pointer"
             />
-            <label className="text-[13px] text-[#8b9bb4] cursor-pointer">
+            <label className="text-[13px] text-[#4b5563] cursor-pointer">
               Guaranteed Prize Distribution
             </label>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                 Draw Date
               </label>
               <input
@@ -183,11 +183,11 @@ export default function CreateDrawPage() {
                 name="drawDate"
                 value={formData.drawDate}
                 onChange={handleInputChange}
-                className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                 Draw Time
               </label>
               <input
@@ -195,13 +195,13 @@ export default function CreateDrawPage() {
                 name="drawTime"
                 value={formData.drawTime}
                 onChange={handleInputChange}
-                className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-3">
+            <label className="block text-[12px] font-semibold text-[#4b5563] mb-3">
               Eligible Levels
             </label>
             <div className="space-y-2">
@@ -215,7 +215,7 @@ export default function CreateDrawPage() {
                       onChange={handleLevelChange}
                       className="cursor-pointer"
                     />
-                    <label className="text-[13px] text-[#8b9bb4] cursor-pointer">
+                    <label className="text-[13px] text-[#4b5563] cursor-pointer">
                       {level}
                     </label>
                   </div>
@@ -225,7 +225,7 @@ export default function CreateDrawPage() {
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
               Description
             </label>
             <textarea
@@ -234,7 +234,7 @@ export default function CreateDrawPage() {
               onChange={handleInputChange}
               placeholder="Enter draw description..."
               rows={4}
-              className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors placeholder:text-[#4a5568] resize-none"
+              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280] resize-none"
             />
           </div>
 
@@ -251,15 +251,15 @@ export default function CreateDrawPage() {
         </div>
 
         {/* RIGHT: LIVE PREVIEW */}
-        <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8 flex flex-col justify-start">
-          <h2 className="text-[20px] font-bold text-[#e8edf3] mb-6">
+        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-8 flex flex-col justify-start">
+          <h2 className="text-[20px] font-bold text-[#111827] mb-6">
             Preview
           </h2>
 
-          <div className="bg-[rgba(255,255,255,0.03)] rounded-2xl p-6 border border-[rgba(255,255,255,0.07)]">
+          <div className="bg-[#f3f4f6] rounded-2xl p-6 border border-[#e5e7eb]">
             <Badge label="UPCOMING" variant="gold" />
 
-            <h3 className="text-[18px] font-bold text-[#e8edf3] my-4">
+            <h3 className="text-[18px] font-bold text-[#111827] my-4">
               {formData.drawName || 'Draw Name'}
             </h3>
 
@@ -267,7 +267,7 @@ export default function CreateDrawPage() {
               ₹{formatINR(formData.prizePool)}
             </p>
 
-            <div className="space-y-2 mb-4 text-[12px] text-[#8b9bb4]">
+            <div className="space-y-2 mb-4 text-[12px] text-[#4b5563]">
               <p>
                 💰 Ticket Price: <span className="text-[#f5c518]">₹{formatINR(formData.ticketPrice)}</span>
               </p>
@@ -285,7 +285,7 @@ export default function CreateDrawPage() {
               </p>
             </div>
 
-            <p className="text-[12px] text-[#4a5568] mb-6">
+            <p className="text-[12px] text-[#6b7280] mb-6">
               {formData.description || 'Enter description for preview...'}
             </p>
 
@@ -294,7 +294,7 @@ export default function CreateDrawPage() {
             </button>
 
             <div className="text-center">
-              <p className="text-[12px] text-[#4a5568]">Countdown:</p>
+              <p className="text-[12px] text-[#6b7280]">Countdown:</p>
               <p className="text-[24px] font-bold text-[#f5c518] font-mono">
                 XX:XX:XX
               </p>

@@ -138,18 +138,18 @@ export default function UserDetailPage({
       </Link>
 
       {/* PROFILE SECTION */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8 grid grid-cols-2 gap-8">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-8 grid grid-cols-2 gap-8">
         {/* Left: User Info */}
         <div>
           <div className="flex items-start gap-4 mb-6">
             <Avatar name={user.name} size="lg" />
             <div>
-              <h1 className="text-[24px] font-bold text-[#e8edf3]">
+              <h1 className="text-[24px] font-bold text-[#111827]">
                 {user.name}
               </h1>
-              <p className="text-[#8b9bb4] text-[13px]">{user.email}</p>
-              <p className="text-[#8b9bb4] text-[13px]">{user.phone}</p>
-              <p className="text-[#4a5568] text-[12px] mt-2">
+              <p className="text-[#4b5563] text-[13px]">{user.email}</p>
+              <p className="text-[#4b5563] text-[13px]">{user.phone}</p>
+              <p className="text-[#6b7280] text-[12px] mt-2">
                 Joined {formatDate(user.joinedDate)}
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function UserDetailPage({
           />
 
           <div className="w-full mt-6 bg-[rgba(245,197,24,0.1)] rounded-lg p-4 mb-4">
-            <p className="text-[12px] text-[#8b9bb4] mb-2">
+            <p className="text-[12px] text-[#4b5563] mb-2">
               Progress to Next Level
             </p>
             <div className="flex items-center gap-3">
@@ -197,13 +197,13 @@ export default function UserDetailPage({
             <button className="flex-1 bg-[rgba(255,77,109,0.12)] text-[#ff4d6d] border border-[rgba(255,77,109,0.2)] px-3 py-2 rounded-lg hover:bg-[rgba(255,77,109,0.2)] transition-colors text-[12px] font-semibold">
               🚫 Suspend
             </button>
-            <button className="flex-1 bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[12px] font-semibold">
+            <button className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[12px] font-semibold">
               🔑 Reset Password
             </button>
             <button className="flex-1 bg-[rgba(245,197,24,0.12)] text-[#f5c518] border border-[rgba(245,197,24,0.2)] px-3 py-2 rounded-lg hover:bg-[rgba(245,197,24,0.2)] transition-colors text-[12px] font-semibold">
               💰 Add Bonus
             </button>
-            <button className="flex-1 bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[12px] font-semibold">
+            <button className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[12px] font-semibold">
               📢 Notify
             </button>
           </div>
@@ -216,19 +216,19 @@ export default function UserDetailPage({
           icon="🎫"
           value={user.tickets}
           label="Tickets Bought"
-          accentColor="#3d9eff"
+          accentColor="#1e40af"
         />
         <StatCard
           icon="💸"
           value={`₹${formatINR(user.totalSpent)}`}
           label="Total Spent"
-          accentColor="#f5c518"
+          accentColor="#d97706"
         />
         <StatCard
           icon="👥"
           value={user.referrals}
           label="Referrals Made"
-          accentColor="#00d68f"
+          accentColor="#16a34a"
         />
         <StatCard
           icon="👛"
@@ -239,9 +239,9 @@ export default function UserDetailPage({
       </div>
 
       {/* TABS */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl">
         {/* Tab Headers */}
-        <div className="border-b border-[rgba(255,255,255,0.07)] flex">
+        <div className="border-b border-[#e5e7eb] flex">
           {[
             { id: 'tickets', label: 'Ticket History' },
             { id: 'wallet', label: 'Wallet Transactions' },
@@ -254,7 +254,7 @@ export default function UserDetailPage({
               className={`px-6 py-4 text-[13px] font-semibold border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'text-[#f5c518] border-b-[#f5c518]'
-                  : 'text-[#4a5568] border-b-transparent hover:text-[#8b9bb4]'
+                  : 'text-[#6b7280] border-b-transparent hover:text-[#4b5563]'
               }`}
             >
               {tab.label}
@@ -268,20 +268,20 @@ export default function UserDetailPage({
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="border-b border-[rgba(255,255,255,0.07)]">
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <tr className="border-b border-[#e5e7eb]">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Draw Name
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Ticket No
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Amount
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Date
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Result
                     </th>
                   </tr>
@@ -290,18 +290,18 @@ export default function UserDetailPage({
                   {ticketHistory.map((ticket) => (
                     <tr
                       key={ticket.id}
-                      className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.03)]"
+                      className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
                     >
-                      <td className="py-3 px-4 text-[#e8edf3]">
+                      <td className="py-3 px-4 text-[#111827]">
                         {ticket.drawName}
                       </td>
-                      <td className="py-3 px-4 text-[#8b9bb4] font-mono">
+                      <td className="py-3 px-4 text-[#4b5563] font-mono">
                         {ticket.ticketNo}
                       </td>
                       <td className="py-3 px-4 text-[#f5c518] font-semibold">
                         ₹{formatINR(ticket.amount)}
                       </td>
-                      <td className="py-3 px-4 text-[#8b9bb4]">
+                      <td className="py-3 px-4 text-[#4b5563]">
                         {formatDate(ticket.date)}
                       </td>
                       <td className="py-3 px-4">
@@ -327,20 +327,20 @@ export default function UserDetailPage({
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="border-b border-[rgba(255,255,255,0.07)]">
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <tr className="border-b border-[#e5e7eb]">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       TXN ID
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Amount
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Method
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Date
                     </th>
                   </tr>
@@ -349,7 +349,7 @@ export default function UserDetailPage({
                   {walletTransactions.map((txn) => (
                     <tr
                       key={txn.id}
-                      className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.03)]"
+                      className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
                     >
                       <td className="py-3 px-4 text-[#3d9eff] font-mono">
                         {txn.id}
@@ -364,14 +364,14 @@ export default function UserDetailPage({
                           }
                         />
                       </td>
-                      <td className="py-3 px-4 font-semibold text-[#e8edf3]">
+                      <td className="py-3 px-4 font-semibold text-[#111827]">
                         {txn.type === 'Deposit' ? '+' : '-'}₹
                         {formatINR(txn.amount)}
                       </td>
-                      <td className="py-3 px-4 text-[#8b9bb4]">
+                      <td className="py-3 px-4 text-[#4b5563]">
                         📱 {txn.method}
                       </td>
-                      <td className="py-3 px-4 text-[#8b9bb4]">
+                      <td className="py-3 px-4 text-[#4b5563]">
                         {formatDate(txn.date)}
                       </td>
                     </tr>
@@ -385,17 +385,17 @@ export default function UserDetailPage({
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="border-b border-[rgba(255,255,255,0.07)]">
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <tr className="border-b border-[#e5e7eb]">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Referred User
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Joined Date
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                    <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                       Reward Earned
                     </th>
                   </tr>
@@ -404,12 +404,12 @@ export default function UserDetailPage({
                   {referrals.map((ref) => (
                     <tr
                       key={ref.id}
-                      className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.03)]"
+                      className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
                     >
-                      <td className="py-3 px-4 text-[#e8edf3]">
+                      <td className="py-3 px-4 text-[#111827]">
                         {ref.name}
                       </td>
-                      <td className="py-3 px-4 text-[#8b9bb4]">
+                      <td className="py-3 px-4 text-[#4b5563]">
                         {formatDate(ref.joinedDate)}
                       </td>
                       <td className="py-3 px-4">
@@ -437,19 +437,19 @@ export default function UserDetailPage({
               {kycDocs.map((doc) => (
                 <div
                   key={doc.id}
-                  className="bg-[rgba(255,255,255,0.03)] rounded-lg p-4 flex items-center justify-between"
+                  className="bg-[#f3f4f6] rounded-lg p-4 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-[13px] font-semibold text-[#e8edf3]">
+                    <p className="text-[13px] font-semibold text-[#111827]">
                       {doc.type}
                     </p>
-                    <p className="text-[12px] text-[#8b9bb4]">
+                    <p className="text-[12px] text-[#4b5563]">
                       Submitted {formatDate(doc.submittedAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge label={doc.status} variant="green" />
-                    <button className="bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] text-[12px] font-semibold transition-colors">
+                    <button className="bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] text-[12px] font-semibold transition-colors">
                       👁 View
                     </button>
                   </div>

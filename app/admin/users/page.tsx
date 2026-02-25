@@ -102,35 +102,35 @@ export default function UsersPage() {
           icon="👥"
           value="24,891"
           label="Total Users"
-          accentColor="#3d9eff"
+          accentColor="#1e40af"
         />
         <StatCard
           icon="✅"
           value="21,340"
           label="KYC Verified"
-          accentColor="#00d68f"
+          accentColor="#16a34a"
         />
         <StatCard
           icon="🚫"
           value="142"
           label="Suspended"
-          accentColor="#ff4d6d"
+          accentColor="#dc2626"
         />
         <StatCard
           icon="⭐"
           value="891"
           label="New This Week"
-          accentColor="#f5c518"
+          accentColor="#d97706"
         />
       </div>
 
       {/* TOOLBAR */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Left: Filters */}
           <div className="flex items-center gap-4 flex-wrap flex-1">
             {/* Search */}
-            <div className="flex items-center gap-2 bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 focus-within:border-[#f5c518] transition-colors">
+            <div className="flex items-center gap-2 bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 focus-within:border-[#d97706] transition-colors">
               <span className="text-[13px]">🔍</span>
               <input
                 type="text"
@@ -140,7 +140,7 @@ export default function UsersPage() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent outline-none text-[#e8edf3] text-[13px] w-48 placeholder:text-[#4a5568]"
+                className="bg-transparent outline-none text-[#111827] text-[13px] w-48 placeholder:text-[#6b7280]"
               />
             </div>
 
@@ -151,7 +151,7 @@ export default function UsersPage() {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#8b9bb4] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+              className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#4b5563] text-[13px] outline-none focus:border-[#d97706] transition-colors"
             >
               <option>All</option>
               <option>Active</option>
@@ -166,7 +166,7 @@ export default function UsersPage() {
                 setLevelFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#8b9bb4] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+              className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#4b5563] text-[13px] outline-none focus:border-[#d97706] transition-colors"
             >
               <option>All Levels</option>
               {Array.from({ length: 10 }, (_, i) => (
@@ -181,7 +181,7 @@ export default function UsersPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportCSV}
-              className="bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4] px-4 py-2.5 rounded-xl hover:border-[rgba(255,255,255,0.15)] hover:text-[#e8edf3] transition-colors text-[13px] font-medium"
+              className="bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-4 py-2.5 rounded-xl hover:border-[rgba(255,255,255,0.15)] hover:text-[#111827] transition-colors text-[13px] font-medium"
             >
               📥 Export CSV
             </button>
@@ -193,11 +193,11 @@ export default function UsersPage() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-[rgba(255,255,255,0.07)]">
+              <tr className="border-b border-[#e5e7eb]">
                 <th className="py-3 px-4 text-left">
                   <input
                     type="checkbox"
@@ -214,28 +214,28 @@ export default function UsersPage() {
                     className="cursor-pointer"
                   />
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   User
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Email
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Level
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Wallet
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Referrals
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   KYC
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -244,7 +244,7 @@ export default function UsersPage() {
               {paginatedUsers.map((user) => (
                 <tr
                   key={user.id}
-                  className="hover:bg-[rgba(255,255,255,0.03)] transition-colors border-b border-[rgba(255,255,255,0.04)]"
+                  className="hover:bg-[#f9fafb] transition-colors border-b border-[#f3f4f6]"
                 >
                   <td className="py-3 px-4">
                     <input
@@ -266,16 +266,16 @@ export default function UsersPage() {
                     <div className="flex items-center gap-2">
                       <Avatar name={user.name} size="sm" />
                       <div>
-                        <p className="font-semibold text-[#e8edf3]">
+                        <p className="font-semibold text-[#111827]">
                           {user.name}
                         </p>
-                        <p className="text-[11px] text-[#4a5568] font-mono">
+                        <p className="text-[11px] text-[#6b7280] font-mono">
                           #{user.id}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-[#8b9bb4]">
+                  <td className="py-3 px-4 text-[#4b5563]">
                     {user.email}
                   </td>
                   <td className="py-3 px-4">
@@ -346,8 +346,8 @@ export default function UsersPage() {
         </div>
 
         {/* PAGINATION */}
-        <div className="flex items-center justify-between mt-6 pt-6 border-t border-[rgba(255,255,255,0.07)]">
-          <p className="text-[13px] text-[#8b9bb4]">
+        <div className="flex items-center justify-between mt-6 pt-6 border-t border-[#e5e7eb]">
+          <p className="text-[13px] text-[#4b5563]">
             Showing {startIdx + 1}–
             {Math.min(startIdx + itemsPerPage, filteredUsers.length)} of{' '}
             {filteredUsers.length} users
@@ -357,7 +357,7 @@ export default function UsersPage() {
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 border border-[rgba(255,255,255,0.07)] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors disabled:opacity-50"
+              className="px-3 py-1 border border-[#e5e7eb] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors disabled:opacity-50"
             >
               ←
             </button>
@@ -371,7 +371,7 @@ export default function UsersPage() {
                   className={`px-3 py-1 rounded-lg text-[13px] font-medium transition-colors ${
                     currentPage === pageNum
                       ? 'bg-[#f5c518] text-black'
-                      : 'border border-[rgba(255,255,255,0.07)] text-[#8b9bb4] hover:border-[rgba(255,255,255,0.15)]'
+                      : 'border border-[#e5e7eb] text-[#4b5563] hover:border-[rgba(255,255,255,0.15)]'
                   }`}
                 >
                   {pageNum}
@@ -381,10 +381,10 @@ export default function UsersPage() {
 
             {totalPages > 5 && (
               <>
-                <span className="text-[#4a5568]">...</span>
+                <span className="text-[#6b7280]">...</span>
                 <button
                   onClick={() => setCurrentPage(totalPages)}
-                  className="px-3 py-1 border border-[rgba(255,255,255,0.07)] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors text-[#8b9bb4]"
+                  className="px-3 py-1 border border-[#e5e7eb] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors text-[#4b5563]"
                 >
                   {totalPages}
                 </button>
@@ -396,7 +396,7 @@ export default function UsersPage() {
                 setCurrentPage(Math.min(totalPages, currentPage + 1))
               }
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-[rgba(255,255,255,0.07)] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors disabled:opacity-50"
+              className="px-3 py-1 border border-[#e5e7eb] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors disabled:opacity-50"
             >
               →
             </button>

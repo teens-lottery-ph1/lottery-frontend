@@ -63,56 +63,56 @@ export default function WalletPage() {
           icon="👛"
           value={`₹${formatINR(totalBalance)}`}
           label="Total Wallet Balance"
-          accentColor="#f5c518"
+          accentColor="#d97706"
         />
         <StatCard
           icon="📊"
           value={`₹${formatINR(avgBalance)}`}
           label="Average Balance"
-          accentColor="#3d9eff"
+          accentColor="#1e40af"
         />
         <StatCard
           icon="💫"
           value={txnToday}
           label="Transactions Today"
-          accentColor="#00d68f"
+          accentColor="#16a34a"
         />
         <StatCard
           icon="🔒"
           value={`₹${formatINR(lockedPrizes)}`}
           label="Locked Prizes"
-          accentColor="#ff4d6d"
+          accentColor="#dc2626"
         />
       </div>
 
       {/* WALLET TABLE + ADJUSTMENT PANEL */}
       <div className="grid grid-cols-[1fr_350px] gap-6">
         {/* WALLET TABLE */}
-        <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6">
-          <h3 className="text-[18px] font-bold text-[#e8edf3] mb-6">
+        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
+          <h3 className="text-[18px] font-bold text-[#111827] mb-6">
             User Wallets
           </h3>
 
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="border-b border-[rgba(255,255,255,0.07)]">
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <tr className="border-b border-[#e5e7eb]">
+                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                     User
                   </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                     Balance
                   </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                     Bonus
                   </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                     Locked
                   </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                     Last Txn
                   </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -121,12 +121,12 @@ export default function WalletPage() {
                 {walletData.map((user) => (
                   <tr
                     key={user.userId}
-                    className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.03)]"
+                    className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Avatar name={user.userName} size="sm" />
-                        <p className="text-[#e8edf3] font-semibold">
+                        <p className="text-[#111827] font-semibold">
                           {user.userName}
                         </p>
                       </div>
@@ -140,7 +140,7 @@ export default function WalletPage() {
                     <td className="py-3 px-4 text-[#ff4d6d]">
                       ₹{formatINR(user.locked)}
                     </td>
-                    <td className="py-3 px-4 text-[#8b9bb4]">
+                    <td className="py-3 px-4 text-[#4b5563]">
                       {user.lastTxn}
                     </td>
                     <td className="py-3 px-4">
@@ -168,23 +168,23 @@ export default function WalletPage() {
 
         {/* MANUAL ADJUSTMENT PANEL */}
         {adjustmentOpen && selectedUserWallet && (
-          <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 h-fit sticky top-20">
-            <h3 className="text-[16px] font-bold text-[#e8edf3] mb-4">
+          <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 h-fit sticky top-20">
+            <h3 className="text-[16px] font-bold text-[#111827] mb-4">
               Manual Adjustment
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                   User
                 </label>
-                <p className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2 text-[#e8edf3]">
+                <p className="bg-[#f3f4f6] rounded-lg px-3 py-2 text-[#111827]">
                   {selectedUserWallet.userName}
                 </p>
               </div>
 
               <div>
-                <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                   Amount
                 </label>
                 <input
@@ -197,12 +197,12 @@ export default function WalletPage() {
                     }))
                   }
                   placeholder="0"
-                  className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors placeholder:text-[#4a5568]"
+                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280]"
                 />
               </div>
 
               <div>
-                <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                   Type
                 </label>
                 <div className="flex gap-2">
@@ -216,7 +216,7 @@ export default function WalletPage() {
                     className={`flex-1 py-2 rounded-lg text-[12px] font-semibold transition-colors ${
                       adjustmentForm.type === 'Add'
                         ? 'bg-[#f5c518] text-black'
-                        : 'bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4]'
+                        : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563]'
                     }`}
                   >
                     Add Funds
@@ -231,7 +231,7 @@ export default function WalletPage() {
                     className={`flex-1 py-2 rounded-lg text-[12px] font-semibold transition-colors ${
                       adjustmentForm.type === 'Deduct'
                         ? 'bg-[#f5c518] text-black'
-                        : 'bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4]'
+                        : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563]'
                     }`}
                   >
                     Deduct
@@ -240,7 +240,7 @@ export default function WalletPage() {
               </div>
 
               <div>
-                <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                   Reason
                 </label>
                 <select
@@ -251,7 +251,7 @@ export default function WalletPage() {
                       reason: e.target.value,
                     }))
                   }
-                  className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-[#8b9bb4] text-[13px] outline-none focus:border-[#f5c518] transition-colors"
+                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#4b5563] text-[13px] outline-none focus:border-[#d97706] transition-colors"
                 >
                   <option>Bonus Award</option>
                   <option>Contest Winner</option>
@@ -263,7 +263,7 @@ export default function WalletPage() {
               </div>
 
               <div>
-                <label className="block text-[12px] font-semibold text-[#8b9bb4] mb-2">
+                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
                   Note
                 </label>
                 <textarea
@@ -276,7 +276,7 @@ export default function WalletPage() {
                   }
                   placeholder="Admin note..."
                   rows={3}
-                  className="w-full bg-[#13191f] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-[#e8edf3] text-[13px] outline-none focus:border-[#f5c518] transition-colors placeholder:text-[#4a5568] resize-none"
+                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280] resize-none"
                 />
               </div>
 
@@ -293,7 +293,7 @@ export default function WalletPage() {
                 </button>
                 <button
                   onClick={handleCloseAdjustment}
-                  className="flex-1 bg-[#13191f] border border-[rgba(255,255,255,0.07)] text-[#8b9bb4] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[13px]"
+                  className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[13px]"
                 >
                   Cancel
                 </button>

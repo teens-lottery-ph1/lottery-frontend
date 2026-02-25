@@ -40,54 +40,54 @@ export default function ReferralPage() {
           label="Total Referrals"
           change="14%"
           changeType="up"
-          accentColor="#f5c518"
+          accentColor="#d97706"
         />
         <StatCard
           icon="💰"
           value={`₹${formatINR(rewardsPaid)}`}
           label="Rewards Paid"
-          accentColor="#00d68f"
+          accentColor="#16a34a"
         />
         <StatCard
           icon="👥"
           value={activeReferrers}
           label="Active Referrers"
-          accentColor="#3d9eff"
+          accentColor="#1e40af"
         />
         <StatCard
           icon="📊"
           value={`${conversionRate}%`}
           label="Conversion Rate"
-          accentColor="#a855f7"
+          accentColor="#7c3aed"
         />
       </div>
 
       {/* TOP REFERRERS LEADERBOARD */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6">
-        <h3 className="text-[18px] font-bold text-[#e8edf3] mb-6">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
+        <h3 className="text-[18px] font-bold text-[#111827] mb-6">
           Top Referrers Leaderboard
         </h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-[rgba(255,255,255,0.07)]">
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+              <tr className="border-b border-[#e5e7eb]">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Rank
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   User
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Referrals
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Total Earned
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Level
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#4a5568] uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Joined
                 </th>
               </tr>
@@ -96,7 +96,7 @@ export default function ReferralPage() {
               {topReferrers.map((user, idx) => (
                 <tr
                   key={user.id}
-                  className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.03)]"
+                  className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
                 >
                   <td className="py-3 px-4 font-bold text-[#f5c518]">
                     {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
@@ -104,7 +104,7 @@ export default function ReferralPage() {
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <Avatar name={user.name} size="sm" />
-                      <p className="font-semibold text-[#e8edf3]">
+                      <p className="font-semibold text-[#111827]">
                         {user.name}
                       </p>
                     </div>
@@ -130,7 +130,7 @@ export default function ReferralPage() {
                       }
                     />
                   </td>
-                  <td className="py-3 px-4 text-[#8b9bb4]">
+                  <td className="py-3 px-4 text-[#4b5563]">
                     {formatDate(user.joinedDate)}
                   </td>
                 </tr>
@@ -141,9 +141,9 @@ export default function ReferralPage() {
       </div>
 
       {/* REFERRAL PROGRAM CONFIG */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-[18px] font-bold text-[#e8edf3]">
+          <h3 className="text-[18px] font-bold text-[#111827]">
             Program Configuration
           </h3>
           <button className="bg-[#f5c518] text-black font-bold px-4 py-2 rounded-xl hover:bg-[#e6a800] transition-colors text-[13px]">
@@ -186,18 +186,18 @@ export default function ReferralPage() {
           ].map((setting, idx) => (
             <div
               key={idx}
-              className="bg-[rgba(255,255,255,0.03)] rounded-lg p-4 flex items-center justify-between"
+              className="bg-[#f3f4f6] rounded-lg p-4 flex items-center justify-between"
             >
               <div className="flex items-center gap-4">
                 <span className="text-[18px]">{setting.icon}</span>
                 <div>
-                  <p className="text-[13px] font-semibold text-[#e8edf3]">
+                  <p className="text-[13px] font-semibold text-[#111827]">
                     {setting.label}
                   </p>
-                  <p className="text-[12px] text-[#8b9bb4]">{setting.value}</p>
+                  <p className="text-[12px] text-[#4b5563]">{setting.value}</p>
                 </div>
               </div>
-              <button className="text-[#8b9bb4] hover:text-[#f5c518] text-[13px] font-medium transition-colors">
+              <button className="text-[#4b5563] hover:text-[#f5c518] text-[13px] font-medium transition-colors">
                 ✎ Edit
               </button>
             </div>
@@ -206,8 +206,8 @@ export default function ReferralPage() {
       </div>
 
       {/* REFERRAL CHAIN VISUALIZATION */}
-      <div className="bg-[#0d1117] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6">
-        <h3 className="text-[18px] font-bold text-[#e8edf3] mb-6">
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
+        <h3 className="text-[18px] font-bold text-[#111827] mb-6">
           Top Referrer Chain — Deepak Mehta
         </h3>
 
@@ -218,7 +218,7 @@ export default function ReferralPage() {
               <div className="flex items-center justify-center gap-2">
                 <Avatar name="Deepak Mehta" size="sm" />
                 <div>
-                  <p className="font-bold text-[#e8edf3]">Deepak Mehta</p>
+                  <p className="font-bold text-[#111827]">Deepak Mehta</p>
                   <Badge label="28 referrals" variant="gold" />
                 </div>
               </div>
@@ -281,7 +281,7 @@ export default function ReferralPage() {
                       <p className="font-bold text-[#00d68f]">
                         {user.name}
                       </p>
-                      <p className="text-[11px] text-[#8b9bb4]">
+                      <p className="text-[11px] text-[#4b5563]">
                         {user.referrals} refs
                       </p>
                     </div>
