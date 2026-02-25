@@ -76,7 +76,7 @@ export default function CreateDrawPage() {
     <div className="space-y-8">
       <Link
         href="/admin/draws"
-        className="text-[#f5c518] hover:text-[#e6a800] text-[13px] font-medium inline-flex items-center gap-2"
+        className="text-[#d97706] hover:text-[#e6a800] text-[13px] font-medium inline-flex items-center gap-2"
       >
         ← Back to Draws
       </Link>
@@ -263,23 +263,23 @@ export default function CreateDrawPage() {
               {formData.drawName || 'Draw Name'}
             </h3>
 
-            <p className="text-[32px] font-bold text-[#f5c518] mb-2">
+            <p className="text-[32px] font-bold text-[#d97706] mb-2">
               ₹{formatINR(formData.prizePool)}
             </p>
 
             <div className="space-y-2 mb-4 text-[12px] text-[#4b5563]">
               <p>
-                💰 Ticket Price: <span className="text-[#f5c518]">₹{formatINR(formData.ticketPrice)}</span>
+                💰 Ticket Price: <span className="text-[#d97706]">₹{formatINR(formData.ticketPrice)}</span>
               </p>
               <p>
                 📊 Max Entries:{' '}
-                <span className="text-[#f5c518]">
+                <span className="text-[#d97706]">
                   {formatINR(formData.maxEntries)}
                 </span>
               </p>
               <p>
                 📋 Eligible:{' '}
-                <span className="text-[#f5c518]">
+                <span className="text-[#d97706]">
                   {formData.eligibleLevels.join(', ')}
                 </span>
               </p>
@@ -289,13 +289,13 @@ export default function CreateDrawPage() {
               {formData.description || 'Enter description for preview...'}
             </p>
 
-            <button className="w-full bg-[rgba(245,197,24,0.12)] text-[#f5c518] border border-[rgba(245,197,24,0.2)] py-2 rounded-lg text-[13px] font-semibold hover:bg-[rgba(245,197,24,0.2)] transition-colors mb-4">
+            <button className="w-full bg-[rgba(217,119,6,0.12)] text-[#d97706] border border-[rgba(217,119,6,0.2)] py-2 rounded-lg text-[13px] font-semibold hover:bg-[rgba(217,119,6,0.2)] transition-colors mb-4">
               🎟️ Buy Ticket
             </button>
 
             <div className="text-center">
               <p className="text-[12px] text-[#6b7280]">Countdown:</p>
-              <p className="text-[24px] font-bold text-[#f5c518] font-mono">
+              <p className="text-[24px] font-bold text-[#d97706] font-mono">
                 XX:XX:XX
               </p>
             </div>

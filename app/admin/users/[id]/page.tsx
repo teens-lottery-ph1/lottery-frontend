@@ -132,7 +132,7 @@ export default function UserDetailPage({
       {/* Back Button */}
       <Link
         href="/admin/users"
-        className="text-[#f5c518] hover:text-[#e6a800] text-[13px] font-medium inline-flex items-center gap-2"
+        className="text-[#d97706] hover:text-[#b45309] text-[13px] font-medium inline-flex items-center gap-2"
       >
         ← Back to Users
       </Link>
@@ -173,20 +173,20 @@ export default function UserDetailPage({
             }
           />
 
-          <div className="w-full mt-6 bg-[rgba(245,197,24,0.1)] rounded-lg p-4 mb-4">
+          <div className="w-full mt-6 bg-[rgba(217,119,6,0.1)] rounded-lg p-4 mb-4">
             <p className="text-[12px] text-[#4b5563] mb-2">
               Progress to Next Level
             </p>
             <div className="flex items-center gap-3">
               <div className="flex-1 h-2 bg-[rgba(255,255,255,0.07)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#f5c518] rounded-full"
+                  className="h-full bg-[#d97706] rounded-full"
                   style={{
                     width: `${(user.points / user.nextLevelPoints) * 100}%`,
                   }}
                 ></div>
               </div>
-              <span className="text-[12px] text-[#f5c518] font-semibold">
+              <span className="text-[12px] text-[#d97706] font-semibold">
                 {formatINR(user.points)} /{' '}
                 {formatINR(user.nextLevelPoints)}
               </span>
@@ -200,7 +200,7 @@ export default function UserDetailPage({
             <button className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[12px] font-semibold">
               🔑 Reset Password
             </button>
-            <button className="flex-1 bg-[rgba(245,197,24,0.12)] text-[#f5c518] border border-[rgba(245,197,24,0.2)] px-3 py-2 rounded-lg hover:bg-[rgba(245,197,24,0.2)] transition-colors text-[12px] font-semibold">
+            <button className="flex-1 bg-[rgba(217,119,6,0.12)] text-[#d97706] border border-[rgba(217,119,6,0.2)] px-3 py-2 rounded-lg hover:bg-[rgba(217,119,6,0.2)] transition-colors text-[12px] font-semibold">
               💰 Add Bonus
             </button>
             <button className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[12px] font-semibold">
@@ -253,7 +253,7 @@ export default function UserDetailPage({
               onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-4 text-[13px] font-semibold border-b-2 transition-colors ${
                 activeTab === tab.id
-                  ? 'text-[#f5c518] border-b-[#f5c518]'
+                  ? 'text-[#d97706] border-b-[#d97706]'
                   : 'text-[#6b7280] border-b-transparent hover:text-[#4b5563]'
               }`}
             >
@@ -298,7 +298,7 @@ export default function UserDetailPage({
                       <td className="py-3 px-4 text-[#4b5563] font-mono">
                         {ticket.ticketNo}
                       </td>
-                      <td className="py-3 px-4 text-[#f5c518] font-semibold">
+                      <td className="py-3 px-4 text-[#d97706] font-semibold">
                         ₹{formatINR(ticket.amount)}
                       </td>
                       <td className="py-3 px-4 text-[#4b5563]">
@@ -351,7 +351,7 @@ export default function UserDetailPage({
                       key={txn.id}
                       className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
                     >
-                      <td className="py-3 px-4 text-[#3d9eff] font-mono">
+                      <td className="py-3 px-4 text-[#1e40af] font-mono">
                         {txn.id}
                       </td>
                       <td className="py-3 px-4">
@@ -422,7 +422,7 @@ export default function UserDetailPage({
                           }
                         />
                       </td>
-                      <td className="py-3 px-4 font-semibold text-[#00d68f]">
+                      <td className="py-3 px-4 font-semibold text-[#16a34a]">
                         ₹{formatINR(ref.reward)}
                       </td>
                     </tr>
