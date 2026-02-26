@@ -1,7 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @import "tailwindcss";
 
-@theme {
-  --color-background: #061a14;
-  --color-card: #0b231b;
-  --color-primary: #10b981;
+:root {
+  /* Dark Lottery Theme */
+  --background: 150 20% 5%;
+  --foreground: 0 0% 95%;
+
+  --primary: 160 70% 40%;
+  --secondary: 150 10% 14%;
+  --muted-foreground: 150 5% 55%;
+  --border: 150 10% 15%;
+  --accent: 42 90% 55%;
+
+  /* Custom UI Tokens */
+  --surface: 150 12% 10%;
+  --surface-hover: 150 12% 13%;
+  --glow-primary: 160 70% 40%;
+  --glow-gold: 42 90% 55%;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Utilities (needed for your navbar effects) */
+.text-gradient-gold {
+  background: linear-gradient(135deg, hsl(42 90% 55%), hsl(35 95% 65%), hsl(42 90% 55%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-primary {
+  box-shadow: 0 0 20px hsl(160 70% 40% / 0.3), 0 0 60px hsl(160 70% 40% / 0.1);
+}
+
+.glow-gold {
+  box-shadow: 0 0 20px hsl(42 90% 55% / 0.3), 0 0 60px hsl(42 90% 55% / 0.1);
 }
