@@ -45,7 +45,7 @@ Step 3 :
 git checkout -b "branch_name"
 
 Step 4 :
-git add "file name"
+git add "C:\Users\rvars\OneDrive\Desktop\Project Lottery\lottery-frontend\app\results\page.tsx"
 
 Step 5 :
 git commit -m "message of commit "
