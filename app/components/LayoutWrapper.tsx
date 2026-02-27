@@ -1,6 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 import AppSidebar from "./Sidebar";
 
 export default function LayoutWrapper({
@@ -10,19 +12,28 @@ export default function LayoutWrapper({
 }) {
   const pathname = usePathname();
 
-  // Pages where sidebar should be hidden (document pages)
+  // Skip all layout for admin routes
+  if (pathname.startsWith("/admin")) {
+    return <>{children}</>; // no Navbar, no Footer, no Sidebar
+  }
+
+  // Pages where sidebar should be hidden
   const hideSidebarRoutes = ["/security", "/privacy", "/terms"];
   const shouldHideSidebar = hideSidebarRoutes.includes(pathname);
 
   return (
-    <div className="flex">
-      {/* Sidebar (hidden only on specific pages) */}
-      {!shouldHideSidebar && <AppSidebar />}
+    <>
+      <Navbar />
 
-      {/* Page Content (UNCHANGED theme & spacing) */}
-      <main className="flex-1 pt-16 min-h-screen px-4 md:px-8">
-        {children}
-      </main>
-    </div>
+      <div className="flex">
+        {!shouldHideSidebar && <AppSidebar />}
+
+        <main className="flex-1 pt-16 min-h-screen px-4 md:px-8">
+          {children}
+        </main>
+      </div>
+
+      <Footer />
+    </>
   );
 }
