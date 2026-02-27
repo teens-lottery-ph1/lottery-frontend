@@ -112,16 +112,7 @@ const sections = [
 export default function TermsOfServicePage() {
   return (
     <>
-      {/* Hide Sidebar */}
-      <style>{`
-        aside {
-          display: none !important;
-        }
-        main {
-          margin-left: 0 !important;
-          width: 100% !important;
-        }
-      `}</style>
+      
 
       {/* LUXURY BACKGROUND */}
       <div className="min-h-screen w-full bg-[#0d120f] text-white">
