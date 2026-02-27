@@ -29,14 +29,16 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
+  const closeMenu = () => setMobileOpen(false);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[hsl(var(--border))] bg-[hsl(var(--background))]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
         
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" onClick={closeMenu}>
           <span className="text-2xl">🎰</span>
-          <span className="text-xl font-bold text-gradient-gold">
+          <span className="text-lg md:text-xl font-bold text-gradient-gold">
             Lottery Network
           </span>
         </Link>
@@ -62,7 +64,7 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Right Section */}
+        {/* Right Section (Desktop Only) */}
         <div className="hidden md:flex items-center gap-3">
           <button className="relative p-2 rounded-xl bg-[hsl(var(--surface))] hover:bg-[hsl(var(--surface-hover))] transition">
             <Bell className="w-5 h-5" />
@@ -90,11 +92,54 @@ export default function Navbar() {
         {/* Mobile Toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden p-2"
+          className="lg:hidden p-2 rounded-lg hover:bg-[hsl(var(--surface-hover))] transition"
         >
-          {mobileOpen ? <X /> : <Menu />}
+          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="lg:hidden border-t border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 pb-6 pt-4 space-y-3">
+          
+          {/* Mobile Nav Links */}
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={closeMenu}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
+                  isActive
+                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
+                    : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--surface-hover))] hover:text-white"
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+
+          {/* Mobile Actions */}
+          <div className="pt-4 border-t border-[hsl(var(--border))] space-y-3">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[hsl(var(--surface))] hover:bg-[hsl(var(--surface-hover))] transition">
+              <Wallet className="w-4 h-4 text-green-400" />
+              Wallet: $1,480
+            </button>
+
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-300 hover:text-white transition">
+              <LogIn className="w-4 h-4" />
+              Login
+            </button>
+
+            <button className="w-full rounded-xl bg-[hsl(var(--primary))] px-5 py-3 text-sm font-semibold text-black hover:opacity-90 transition">
+              Sign Up
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
