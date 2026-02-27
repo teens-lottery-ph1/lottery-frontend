@@ -20,10 +20,10 @@ const formatDate = (date: Date) => {
 export default function ReferralPage() {
   // API CALL: Backend endpoint to fetch referral data
   // GET /api/admin/referral/data
-  const totalReferrals = 8420;
-  const rewardsPaid = 420000;
-  const activeReferrers = 284;
-  const conversionRate = 34;
+  const totalReferrals = 0;
+  const rewardsPaid = 0;
+  const activeReferrers = 0;
+  const conversionRate = 0;
 
   // Top referrers sorted
   const topReferrers = [...users]
@@ -38,7 +38,7 @@ export default function ReferralPage() {
           icon="🔗"
           value={totalReferrals}
           label="Total Referrals"
-          change="14%"
+          change="0%"
           changeType="up"
           accentColor="#d97706"
         />

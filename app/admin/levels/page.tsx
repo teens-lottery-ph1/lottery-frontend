@@ -13,9 +13,9 @@ const formatINR = (value: number) => {
 export default function LevelsPage() {
   // API CALL: Backend endpoint to fetch levels configuration
   // GET /api/admin/levels/config
-  const vipMembers = users.filter((u) => u.level === 10).length;
-  const totalRewardsPaid = 820000;
-  const avgProgress = 68;
+  const vipMembers = 0;
+  const totalRewardsPaid = 0;
+  const avgProgress = 0;
 
   // Top level users sorted by points
   const topUsers = [...users]
@@ -28,7 +28,7 @@ export default function LevelsPage() {
       <div className="grid grid-cols-4 gap-6">
         <StatCard
           icon="🏅"
-          value="10"
+          value="0"
           label="Total Levels"
           accentColor="#0891b2"
         />

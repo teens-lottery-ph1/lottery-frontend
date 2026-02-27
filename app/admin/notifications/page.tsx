@@ -30,10 +30,10 @@ export default function NotificationsPage() {
   // Body: { title, message, targetAudience, scheduleTime }
   // Response: { success: boolean, notificationId: string, recipientCount: number }
 
-  const sentToday = 284;
-  const deliveryRate = 98.4;
-  const openRate = 62.3;
-  const clickRate = 28.7;
+  const sentToday = 0;
+  const deliveryRate = 0;
+  const openRate = 0;
+  const clickRate = 0;
 
   const [formData, setFormData] = useState({
     title: '',
@@ -49,50 +49,50 @@ export default function NotificationsPage() {
       title: 'New Draw Available',
       message: 'Mega Millions #4822 is now live!',
       sentAt: new Date('2026-02-25 14:30'),
-      recipients: 89420,
-      delivered: 87950,
-      opened: 54824,
-      clicked: 15732,
+      recipients: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
     },
     {
       id: '2',
       title: 'Congratulations!',
       message: 'You won ₹50,000 in Daily Draw #485',
       sentAt: new Date('2026-02-24 20:15'),
-      recipients: 2450,
-      delivered: 2405,
-      opened: 1956,
-      clicked: 284,
+      recipients: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
     },
     {
       id: '3',
       title: 'Limited Time Offer',
       message: 'Get 20% bonus on your next deposit',
       sentAt: new Date('2026-02-23 09:00'),
-      recipients: 142300,
-      delivered: 140024,
-      opened: 87534,
-      clicked: 24892,
+      recipients: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
     },
     {
       id: '4',
       title: 'Referral Reward Earned',
       message: 'Your friend Rahul joined! Earn ₹500',
       sentAt: new Date('2026-02-22 16:45'),
-      recipients: 34560,
-      delivered: 33895,
-      opened: 20934,
-      clicked: 8429,
+      recipients: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
     },
     {
       id: '5',
       title: 'Draw Results Announced',
       message: 'Power Ball #156 results are out',
       sentAt: new Date('2026-02-21 22:00'),
-      recipients: 98760,
-      delivered: 96834,
-      opened: 58102,
-      clicked: 12435,
+      recipients: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
     },
   ];
 

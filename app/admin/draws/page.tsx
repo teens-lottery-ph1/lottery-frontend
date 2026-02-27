@@ -51,14 +51,10 @@ export default function DrawsPage() {
     return matchesSearch && matchesStatus && matchesGameType;
   });
 
-  const liveDraws = draws.filter((d) => d.status === 'live').length;
-  const scheduledDraws = draws.filter(
-    (d) => d.status === 'scheduled'
-  ).length;
-  const completedDraws = draws.filter(
-    (d) => d.status === 'completed'
-  ).length;
-  const totalPaid = 4800000;
+  const liveDraws = 0;
+  const scheduledDraws = 0;
+  const completedDraws = 0;
+  const totalPaid = 0;
 
   return (
     <div className="space-y-8">

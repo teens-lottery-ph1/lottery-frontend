@@ -17,35 +17,35 @@ export default function AnalyticsPage() {
   //   - endDate: End date for analytics (YYYY-MM-DD)
   // Response: { pageViews: number, conversionRate: number, avgSession: number, bounceRate: number }
 
-  const pageViews = 284291;
-  const conversionRate = 8.42;
-  const avgSession = 5.24;
-  const bounceRate = 12.8;
+  const pageViews = 0;
+  const conversionRate = 0;
+  const avgSession = 0;
+  const bounceRate = 0;
 
   // Mock 30-day revenue data
   const revenueData = [
-    { date: 'Feb 1', revenue: 1200000, entries: 8420 },
-    { date: 'Feb 2', revenue: 1350000, entries: 9210 },
-    { date: 'Feb 3', revenue: 980000, entries: 6800 },
-    { date: 'Feb 4', revenue: 1450000, entries: 9950 },
-    { date: 'Feb 5', revenue: 1100000, entries: 7600 },
-    { date: 'Feb 6', revenue: 1600000, entries: 11200 },
-    { date: 'Feb 7', revenue: 1900000, entries: 13400 },
+    { date: 'Feb 1', revenue: 0, entries: 0 },
+    { date: 'Feb 2', revenue: 0, entries: 0 },
+    { date: 'Feb 3', revenue: 0, entries: 0 },
+    { date: 'Feb 4', revenue: 0, entries: 0 },
+    { date: 'Feb 5', revenue: 0, entries: 0 },
+    { date: 'Feb 6', revenue: 0, entries: 0 },
+    { date: 'Feb 7', revenue: 0, entries: 0 },
   ];
 
   // Mock traffic sources data
   const trafficSources = [
-    { source: 'Direct', users: 42891, percentage: 35 },
-    { source: 'Organic Search', users: 38120, percentage: 31 },
-    { source: 'Referral Links', users: 28450, percentage: 23 },
-    { source: 'Social Media', users: 12800, percentage: 11 },
+    { source: 'Direct', users: 0, percentage: 0 },
+    { source: 'Organic Search', users: 0, percentage: 0 },
+    { source: 'Referral Links', users: 0, percentage: 0 },
+    { source: 'Social Media', users: 0, percentage: 0 },
   ];
 
   // Mock platform breakdown
   const platformData = [
-    { platform: 'Mobile', users: 89120, percentage: 62 },
-    { platform: 'Desktop', users: 45300, percentage: 31 },
-    { platform: 'Tablet', users: 8940, percentage: 7 },
+    { platform: 'Mobile', users: 0, percentage: 0 },
+    { platform: 'Desktop', users: 0, percentage: 0 },
+    { platform: 'Tablet', users: 0, percentage: 0 },
   ];
 
   // Mock top performing draws
@@ -53,30 +53,30 @@ export default function AnalyticsPage() {
     {
       id: '1',
       name: 'Mega Millions #4821',
-      entries: 12450,
-      revenue: 1245000,
-      winnings: 520000,
+      entries: 0,
+      revenue: 0,
+      winnings: 0,
     },
     {
       id: '2',
       name: 'Super Jackpot #892',
-      entries: 9840,
-      revenue: 984000,
-      winnings: 420000,
+      entries: 0,
+      revenue: 0,
+      winnings: 0,
     },
     {
       id: '3',
       name: 'Power Ball #156',
-      entries: 7620,
-      revenue: 762000,
-      winnings: 310000,
+      entries: 0,
+      revenue: 0,
+      winnings: 0,
     },
     {
       id: '4',
       name: 'Daily Draw #485',
-      entries: 5430,
-      revenue: 543000,
-      winnings: 180000,
+      entries: 0,
+      revenue: 0,
+      winnings: 0,
     },
   ];
 

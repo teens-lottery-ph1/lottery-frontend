@@ -24,10 +24,10 @@ export default function WalletPage() {
     note: '',
   });
 
-  const totalBalance = 12000000;
-  const avgBalance = 482000;
-  const txnToday = 1842;
-  const lockedPrizes = 2400000;
+  const totalBalance = 0;
+  const avgBalance = 0;
+  const txnToday = 0;
+  const lockedPrizes = 0;
 
   const handleOpenAdjustment = (user: (typeof walletData)[0]) => {
     setSelectedUserWallet(user);

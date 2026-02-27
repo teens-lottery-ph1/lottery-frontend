@@ -42,10 +42,10 @@ export default function PaymentsPage() {
     return matchesDate && matchesType && matchesStatus;
   });
 
-  const totalRevenue = 4820000;
-  const totalDeposits = 3210000;
-  const totalWithdrawals = 1610000;
-  const pendingAmount = 240000;
+  const totalRevenue = 0;
+  const totalDeposits = 0;
+  const totalWithdrawals = 0;
+  const pendingAmount = 0;
 
   // CSV Export
   const handleExportCSV = () => {
@@ -91,7 +91,7 @@ export default function PaymentsPage() {
           icon="💰"
           value={`₹${formatINR(totalRevenue)}`}
           label="Total Revenue"
-          change="8.7%"
+          change="0%"
           changeType="up"
           accentColor="#16a34a"
         />

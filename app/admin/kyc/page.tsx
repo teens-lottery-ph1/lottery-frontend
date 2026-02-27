@@ -21,10 +21,10 @@ export default function KYCPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectNotes, setRejectNotes] = useState('');
 
-  const pendingCount = 8;
-  const verifiedCount = 21340;
-  const rejectedCount = 142;
-  const notSubmittedCount = 3409;
+  const pendingCount = 0;
+  const verifiedCount = 0;
+  const rejectedCount = 0;
+  const notSubmittedCount = 0;
 
   const handleRejectOpen = (doc: (typeof kycDocuments)[0]) => {
     setSelectedDoc(doc);

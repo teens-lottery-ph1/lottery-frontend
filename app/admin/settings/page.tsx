@@ -41,8 +41,8 @@ export default function SettingsPage() {
   // Security Settings
   const [securitySettings, setSecuritySettings] = useState({
     twoFactorAuth: true,
-    passwordExpiry: 90,
-    sessionTimeout: 30,
+    passwordExpiry: 0,
+    sessionTimeout: 0,
     ipWhitelisting: false,
   });
 
@@ -52,21 +52,21 @@ export default function SettingsPage() {
       id: '1',
       name: 'Razorpay',
       status: 'Active',
-      transactions: 145230,
+      transactions: 0,
       lastSync: new Date('2026-02-25 14:30'),
     },
     {
       id: '2',
       name: 'PayU',
       status: 'Active',
-      transactions: 89450,
+      transactions: 0,
       lastSync: new Date('2026-02-25 14:25'),
     },
     {
       id: '3',
       name: 'Instamojo',
       status: 'Inactive',
-      transactions: 34200,
+      transactions: 0,
       lastSync: new Date('2026-02-20 10:15'),
     },
   ];

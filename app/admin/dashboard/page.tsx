@@ -22,8 +22,8 @@ const formatTime = (seconds: number) => {
 export default function DashboardPage() {
   // API CALL: Replace with backend endpoint to fetch real-time stats
   // GET /api/admin/dashboard/stats
-  const [countdown, setCountdown] = useState({ h: 2, m: 14, s: 37 });
-  const [totalSeconds, setTotalSeconds] = useState(2 * 3600 + 14 * 60 + 37);
+  const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
+  const [totalSeconds, setTotalSeconds] = useState(0);
 
   // Countdown timer
   useEffect(() => {
@@ -48,20 +48,20 @@ export default function DashboardPage() {
 
   // Level distribution data
   const levelData = [
-    { name: 'VIP', percentage: 4, color: '#f5c518' },
-    { name: 'Titan', percentage: 6, color: '#3d9eff' },
-    { name: 'Superstar', percentage: 9, color: '#f59e0b' },
-    { name: 'Elite', percentage: 12, color: '#a855f7' },
-    { name: 'Diamond', percentage: 15, color: '#06b6d4' },
-    { name: 'Platinum', percentage: 18, color: '#00d68f' },
-    { name: 'Gold', percentage: 20, color: '#f5c518' },
-    { name: 'Silver', percentage: 30, color: '#94a3b8' },
-    { name: 'Bronze', percentage: 40, color: '#cd7c2f' },
-    { name: 'Basic', percentage: 60, color: '#4a5568' },
+    { name: 'VIP', percentage: 0, color: '#f5c518' },
+    { name: 'Titan', percentage: 0, color: '#3d9eff' },
+    { name: 'Superstar', percentage: 0, color: '#f59e0b' },
+    { name: 'Elite', percentage: 0, color: '#a855f7' },
+    { name: 'Diamond', percentage: 0, color: '#06b6d4' },
+    { name: 'Platinum', percentage: 0, color: '#00d68f' },
+    { name: 'Gold', percentage: 0, color: '#f5c518' },
+    { name: 'Silver', percentage: 0, color: '#94a3b8' },
+    { name: 'Bronze', percentage: 0, color: '#cd7c2f' },
+    { name: 'Basic', percentage: 0, color: '#4a5568' },
   ];
 
   // 7-day revenue
-  const revenueHeights = [40, 65, 45, 80, 60, 90, 75];
+  const revenueHeights = [0, 0, 0, 0, 0, 0, 0];
   const revenueDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
@@ -70,31 +70,31 @@ export default function DashboardPage() {
       <div className="grid grid-cols-4 gap-6">
         <StatCard
           icon="👥"
-          value="24,891"
+          value="0"
           label="Total Users"
-          change="12.4%"
+          change="0%"
           changeType="up"
           accentColor="#1e40af"
         />
         <StatCard
           icon="💰"
-          value="₹48.2L"
+          value="₹0"
           label="Total Revenue"
-          change="8.7%"
+          change="0%"
           changeType="up"
           accentColor="#16a34a"
         />
         <StatCard
           icon="🎫"
-          value="1,24,580"
+          value="0"
           label="Tickets Sold"
-          change="22.1%"
+          change="0%"
           changeType="up"
           accentColor="#d97706"
         />
         <StatCard
           icon="🎰"
-          value="3"
+          value="0"
           label="Active Draws"
           changeType="live"
           accentColor="#16a34a"
@@ -214,9 +214,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-end gap-1 h-20">
-              {revenueHeights.map((height) => (
+              {revenueHeights.map((height, index) => (
                 <div
-                  key={height}
+                  key={index}
                   className="flex-1 rounded-t bg-[#fef3c7] hover:bg-[#fbbf24] transition-colors"
                   style={{
                     height: `${height}%`,
