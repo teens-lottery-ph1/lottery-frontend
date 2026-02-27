@@ -68,6 +68,11 @@ const Footer = () => {
                   Privacy Policy
                 </Link>
               </li>
+                            <li>
+                <Link href="/security" className="hover:text-white transition-colors">
+                  Security
+                </Link>
+              </li>
               <li>
                 <Link href="/contact" className="hover:text-white transition-colors">
                   Contact Us
