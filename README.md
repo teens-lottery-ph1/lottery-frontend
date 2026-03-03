@@ -54,3 +54,11 @@ step 6 :
 git push -u origin "your branch name"
 
 
+To remove branch which is sent for PR :
+git checkout your-branch
+git restore path/to/unwanted-file 
+git checkout origin/dev -- path/to/file
+git commit -m "Remove unwanted file from PR"
+git push
+OR
+Creat new branch and do cherrypick
