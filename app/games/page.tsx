@@ -125,9 +125,9 @@ const getCategoryBadgeClass = (category: string) => {
 export default function GamesPage() {
   const [filter, setFilter] = useState("all");
 
-  // All games are shown in the grid; no separate featured section
+  const featuredGames = allGames.filter(g => g.featured);
   const gridGames = filter === "all"
-    ? allGames
+    ? allGames.filter(g => !g.featured)
     : allGames.filter(g => g.category === filter);
 
   return (
@@ -164,9 +164,83 @@ export default function GamesPage() {
           })}
         </div>
 
+        {/* Featured Games Section */}
+        {filter === 'all' && (
+          <div className="mb-12 md:mb-16">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 md:mb-14">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3 flex items-center gap-2">
+                  <Star className="w-6 h-6 text-[#FFB800] fill-[#FFB800]" />
+                  Featured Games
+                </h2>
+                <p className="text-muted-foreground">
+                  Our most popular lottery games with massive jackpots
+                </p>
+              </div>
+              <Link
+                href="/games"
+                className="hidden md:inline-flex items-center gap-2 rounded-xl border border-[rgba(0,255,163,0.15)] px-6 py-3 text-sm font-semibold transition-all hover:border-[#00FFA3] hover:text-[#00FFA3]"
+              >
+                View All Games
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+              {featuredGames.map((game, i) => (
+                <motion.div
+                  key={game.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative rounded-2xl border border-[rgba(0,255,163,0.18)] bg-surface p-6 md:p-8 transition-all duration-300 hover:-translate-y-2 hover:border-[#00FFA3] hover:shadow-[0_20px_70px_rgba(0,255,163,0.15)]"
+                >
+                  {/* Featured Badge */}
+                  <div className="absolute top-4 right-4 md:top-5 md:right-5 flex items-center gap-1 px-3 py-1 rounded-full bg-[rgba(0,255,163,0.12)] text-[#00FFA3] text-xs font-semibold border border-[rgba(0,255,163,0.25)]">
+                    <Star className="w-3 h-3 text-[#FFB800]" />
+                    Featured
+                  </div>
+
+                  {/* Header */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 rounded-xl bg-[rgba(0,255,163,0.10)] flex items-center justify-center">
+                      <Trophy className="w-7 h-7 text-[#FFB800]" />
+                    </div>
+                    <h3 className="text-xl font-display font-bold text-white">
+                      {game.name}
+                    </h3>
+                  </div>
+
+                  {/* Prize */}
+                  <div className="text-4xl font-display font-bold text-gradient-gold mb-6">
+                    {game.prize}
+                  </div>
+
+                  {/* Countdown */}
+                  <CountdownTimer targetDate={new Date(game.date)} label="Next Draw" />
+
+                  {/* Players & Odds */}
+                  <div className="flex items-center justify-between mt-6 pt-6 border-t border-[rgba(0,255,163,0.15)] text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-[#8FA9A2]" />
+                      <span>{game.players.toLocaleString('en-US')} players</span>
+                    </div>
+                    <div className="text-[#00FFA3] font-medium">Odds: {game.odds}</div>
+                  </div>
+
+                  {/* Play Button */}
+                  <button className="w-full mt-6 rounded-xl bg-[#00FFA3] py-3.5 font-semibold text-[#07140F] transition-all hover:bg-[rgba(0,255,163,0.9)] hover:shadow-[0_0_30px_rgba(0,255,163,0.35)]">
+                    Play Now — {game.credits} credits
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* All Games Grid */}
         <div>
-          <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-6 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-6 md:mb-8 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#00FFA3]" />
             {filter === 'all' ? 'All Games' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Games`}
           </h2>
 
