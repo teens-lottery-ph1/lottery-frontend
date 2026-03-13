@@ -6,6 +6,9 @@ import { draws } from '../_components/mock-data';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
 
+
+
+
 // Format currency to Indian format
 const formatINR = (value: number) => {
   return value.toLocaleString('en-IN');

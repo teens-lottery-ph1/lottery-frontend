@@ -1,307 +1,304 @@
+
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Badge from '../_components/Badge';
 
-// Format currency to Indian format
-const formatINR = (value: number) => {
-  return value.toLocaleString('en-IN');
-};
+
+
 
 export default function CreateDrawPage() {
-  // API CALL: Backend endpoint to create new draw
-  // POST /api/admin/draws/create
-  const [formData, setFormData] = useState({
-    drawName: '',
-    gameType: 'Mega Millions',
-    prizePool: 10000000,
-    ticketPrice: 100,
-    maxEntries: 10000,
-    guaranteedPrize: true,
-    drawDate: '2026-02-28',
-    drawTime: '20:00',
-    eligibleLevels: ['All'],
-    description: '',
-  });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      const input = e.target as HTMLInputElement;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: input.checked,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]:
-          name === 'prizePool' || name === 'ticketPrice' || name === 'maxEntries'
-            ? parseInt(value) || 0
-            : value,
-      }));
-    }
-  };
+const [formData, setFormData] = useState({
+  gameTypeId:'',
+  name:'',
+  prizePool:'',
+  ticketPrice:'',
+  maxEntries:'',
+  minEntries:'',
+  drawDate:'',
+  drawstartDate:'',
+  drawendDate:'',
+  description:'',
+  rngSeedHash:'',
+  status:'draft',
+  isGuaranteed:true
+});
 
-  const handleLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (e.target.checked) {
-      if (value === 'All') {
-        setFormData((prev) => ({
-          ...prev,
-          eligibleLevels: ['All'],
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          eligibleLevels: prev.eligibleLevels.includes('All')
-            ? [value]
-            : [...prev.eligibleLevels, value],
-        }));
-      }
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        eligibleLevels: prev.eligibleLevels.filter((l) => l !== value),
-      }));
-    }
-  };
+const [loading,setLoading] = useState(false);
+const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+) => {
+  const target = e.target;
+  const { name, type } = target;
+  const value = type === 'checkbox'
+    ? (target as HTMLInputElement).checked
+    : target.value;
 
-  return (
-    <div className="space-y-8">
-      <Link
-        href="/admin/draws"
-        className="text-[#d97706] hover:text-[#e6a800] text-[13px] font-medium inline-flex items-center gap-2"
-      >
-        ← Back to Draws
-      </Link>
+  setFormData(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
 
-      <div className="grid grid-cols-2 gap-8">
-        {/* LEFT: FORM */}
-        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-8 space-y-6">
-          <h2 className="text-[20px] font-bold text-[#111827]">
-            Create New Draw
-          </h2>
+const handleSubmit = async () => {
 
-          <div>
-            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-              Draw Name
-            </label>
-            <input
-              type="text"
-              name="drawName"
-              value={formData.drawName}
-              onChange={handleInputChange}
-              placeholder="e.g., Mega Millions #4822"
-              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-              Game Type
-            </label>
-            <select
-              name="gameType"
-              value={formData.gameType}
-              onChange={handleInputChange}
-              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-            >
-              <option>Mega Millions</option>
-              <option>Super Jackpot</option>
-              <option>Power Ball</option>
-              <option>Daily Draw</option>
-              <option>Weekly Special</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                Prize Pool ₹
-              </label>
-              <input
-                type="number"
-                name="prizePool"
-                value={formData.prizePool}
-                onChange={handleInputChange}
-                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                Ticket Price ₹
-              </label>
-              <input
-                type="number"
-                name="ticketPrice"
-                value={formData.ticketPrice}
-                onChange={handleInputChange}
-                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-              Max Entries
-            </label>
-            <input
-              type="number"
-              name="maxEntries"
-              value={formData.maxEntries}
-              onChange={handleInputChange}
-              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              name="guaranteedPrize"
-              checked={formData.guaranteedPrize}
-              onChange={handleInputChange}
-              className="cursor-pointer"
-            />
-            <label className="text-[13px] text-[#4b5563] cursor-pointer">
-              Guaranteed Prize Distribution
-            </label>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                Draw Date
-              </label>
-              <input
-                type="date"
-                name="drawDate"
-                value={formData.drawDate}
-                onChange={handleInputChange}
-                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                Draw Time
-              </label>
-              <input
-                type="time"
-                name="drawTime"
-                value={formData.drawTime}
-                onChange={handleInputChange}
-                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#4b5563] mb-3">
-              Eligible Levels
-            </label>
-            <div className="space-y-2">
-              {['All', 'Gold+', 'Platinum+', 'Diamond+', 'VIP Only'].map(
-                (level) => (
-                  <div key={level} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={level}
-                      checked={formData.eligibleLevels.includes(level)}
-                      onChange={handleLevelChange}
-                      className="cursor-pointer"
-                    />
-                    <label className="text-[13px] text-[#4b5563] cursor-pointer">
-                      {level}
-                    </label>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Enter draw description..."
-              rows={4}
-              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280] resize-none"
-            />
-          </div>
-
-          <button
-            onClick={() => {
-              // API CALL: Submit form data to backend
-              // POST /api/admin/draws with formData
-              console.log('Create draw:', formData);
-            }}
-            className="w-full bg-[#f5c518] text-black font-bold px-6 py-3 rounded-xl hover:bg-[#e6a800] transition-colors text-[13px]"
-          >
-            🎯 Launch Draw
-          </button>
-        </div>
-
-        {/* RIGHT: LIVE PREVIEW */}
-        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-8 flex flex-col justify-start">
-          <h2 className="text-[20px] font-bold text-[#111827] mb-6">
-            Preview
-          </h2>
-
-          <div className="bg-[#f3f4f6] rounded-2xl p-6 border border-[#e5e7eb]">
-            <Badge label="UPCOMING" variant="gold" />
-
-            <h3 className="text-[18px] font-bold text-[#111827] my-4">
-              {formData.drawName || 'Draw Name'}
-            </h3>
-
-            <p className="text-[32px] font-bold text-[#d97706] mb-2">
-              ₹{formatINR(formData.prizePool)}
-            </p>
-
-            <div className="space-y-2 mb-4 text-[12px] text-[#4b5563]">
-              <p>
-                💰 Ticket Price: <span className="text-[#d97706]">₹{formatINR(formData.ticketPrice)}</span>
-              </p>
-              <p>
-                📊 Max Entries:{' '}
-                <span className="text-[#d97706]">
-                  {formatINR(formData.maxEntries)}
-                </span>
-              </p>
-              <p>
-                📋 Eligible:{' '}
-                <span className="text-[#d97706]">
-                  {formData.eligibleLevels.join(', ')}
-                </span>
-              </p>
-            </div>
-
-            <p className="text-[12px] text-[#6b7280] mb-6">
-              {formData.description || 'Enter description for preview...'}
-            </p>
-
-            <button className="w-full bg-[rgba(217,119,6,0.12)] text-[#d97706] border border-[rgba(217,119,6,0.2)] py-2 rounded-lg text-[13px] font-semibold hover:bg-[rgba(217,119,6,0.2)] transition-colors mb-4">
-              🎟️ Buy Ticket
-            </button>
-
-            <div className="text-center">
-              <p className="text-[12px] text-[#6b7280]">Countdown:</p>
-              <p className="text-[24px] font-bold text-[#d97706] font-mono">
-                XX:XX:XX
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+if(
+  formData.gameTypeId === '' ||
+  formData.name === '' ||
+  formData.prizePool === '' ||
+  formData.ticketPrice === '' ||
+  formData.maxEntries === '' ||
+  formData.drawDate === '' ||
+  formData.drawstartDate === '' ||
+  formData.drawendDate === ''
+) {
+  alert("Please fill required fields");
+  return;
 }
+
+try{
+
+setLoading(true);
+
+const response = await fetch(
+  "http://localhost:10000/api/create-draw",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      game_type_id: Number(formData.gameTypeId),
+      name: formData.name,
+      prize_pool: Number(formData.prizePool),
+      ticket_price: Number(formData.ticketPrice),
+      max_entries: Number(formData.maxEntries),
+      min_entries: Number(formData.minEntries),
+
+      draw_date: new Date(formData.drawDate).toISOString(),
+      draw_start_date: new Date(formData.drawstartDate).toISOString(),
+      draw_end_date: new Date(formData.drawendDate).toISOString(),
+
+      description: formData.description,
+      rng_seed_hash: formData.rngSeedHash,
+      status: formData.status,
+      is_guaranteed: formData.isGuaranteed
+    })
+  }
+);
+
+if(!response.ok) throw new Error();
+
+alert("✅ Draw created successfully");
+
+setFormData({
+gameTypeId:'',
+name:'',
+prizePool:'',
+ticketPrice:'',
+maxEntries:'',
+minEntries:'',
+drawDate:'',
+drawstartDate:'',
+drawendDate:'',
+description:'',
+rngSeedHash:'',
+status:'draft',
+isGuaranteed:true
+});
+
+}catch{
+
+alert("❌ Error creating draw");
+
+}finally{
+
+setLoading(false);
+
+}
+
+};
+
+const inputClass =
+"border border-gray-300 bg-white text-black p-3 w-full rounded focus:outline-none focus:ring-2 focus:ring-yellow-400";
+
+return (
+
+<div className="space-y-8">
+
+<Link href="/admin/draws" className="text-blue-500 text-sm">
+← Back
+</Link>
+
+<div className="bg-white p-8 rounded-xl shadow max-w-4xl">
+
+<h2 className="text-xl font-semibold text-black mb-6">
+Create Draw
+</h2>
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+<div>
+<label className="text-sm text-black mb-1 block">Game Type ID</label>
+<input
+type="number"
+name="gameTypeId"
+value={formData.gameTypeId}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Draw Name</label>
+<input
+type="text"
+name="name"
+value={formData.name}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Prize Pool</label>
+<input
+type="number"
+name="prizePool"
+value={formData.prizePool}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Ticket Price</label>
+<input
+type="number"
+name="ticketPrice"
+value={formData.ticketPrice}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Max Entries</label>
+<input
+type="number"
+name="maxEntries"
+value={formData.maxEntries}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Min Entries</label>
+<input
+type="number"
+name="minEntries"
+value={formData.minEntries}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Draw Date</label>
+<input
+type="datetime-local"
+name="drawDate"
+value={formData.drawDate}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Draw Start Date</label>
+<input
+type="datetime-local"
+name="drawstartDate"
+value={formData.drawstartDate}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Draw End Date</label>
+<input
+type="datetime-local"
+name="drawendDate"
+value={formData.drawendDate}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">RNG Seed Hash</label>
+<input
+type="text"
+name="rngSeedHash"
+value={formData.rngSeedHash}
+onChange={handleChange}
+className={inputClass}
+/>
+</div>
+
+<div>
+<label className="text-sm text-black mb-1 block">Status</label>
+<select
+name="status"
+value={formData.status}
+onChange={handleChange}
+className={inputClass}
+>
+<option value="draft">Draft</option>
+<option value="scheduled">Scheduled</option>
+<option value="live">Live</option>
+<option value="completed">Completed</option>
+</select>
+</div>
+
+<div className="flex items-center mt-6">
+<input
+type="checkbox"
+name="isGuaranteed"
+checked={formData.isGuaranteed}
+onChange={handleChange}
+className="mr-2"
+/>
+<span className="text-black text-sm">Guaranteed Draw</span>
+</div>
+
+</div>
+
+<div className="mt-6">
+<label className="text-sm text-black mb-1 block">Description</label>
+<textarea
+name="description"
+value={formData.description}
+onChange={handleChange}
+className={inputClass}
+rows={4}
+/>
+</div>
+
+<button
+onClick={handleSubmit}
+disabled={loading}
+className="bg-yellow-500 mt-6 px-6 py-3 rounded font-semibold w-full disabled:opacity-50 text-black"
+>
+{loading ? "Creating..." : "Create Draw"}
+</button>
+
+</div>
+
+</div>
+
+);
+
+}
+
