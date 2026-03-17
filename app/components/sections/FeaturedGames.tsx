@@ -119,6 +119,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star, Trophy, Users } from "lucide-react";
 import CountdownTimer from "@/app/components/ui/CountdownTimer";
+import PlayNowModal from "@/app/components/modals/PlayNowModal";
 
 export default function FeaturedGames() {
 
@@ -131,11 +132,19 @@ export default function FeaturedGames() {
   featured: boolean;
   players: number;
 };
+
+  // WHY IS THIS STATE BEING ADDED?
+  // We need to track the list of games from the API, 
+  // which specific game the user want to play, 
+  // and whether the modal is currently open or closed.
   const [games, setGames] = useState<Game[]>([]);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchGames = async () => {
       try {
+        // Fetching draws from the backend API using the base URL from .env.local
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/draws`
         );
@@ -143,6 +152,7 @@ export default function FeaturedGames() {
         const json = await res.json();
 
         if (json.success) {
+          // Mapping the backend data structure to our frontend Game type
           const formattedGames = json.data.map((item: { id: any; name: any; drawDate: any; prizePool: any; ticketPrice: any; isGuaranteed: any; currentEntries: any; }) => ({
             id: item.id,
             name: item.name,
@@ -163,9 +173,19 @@ export default function FeaturedGames() {
     fetchGames();
   }, []);
 
+  /**
+   * WHY IS THIS FUNCTION BEING ADDED?
+   * When a user clicks "Play Now", we store that game's info and open the modal overlay.
+   */
+  const handlePlayNow = (game: Game) => {
+    setSelectedGame(game);
+    setIsModalOpen(true);
+  };
+
   return (
     <section className="py-12 md:py-16 bg-gradient-dark">
       <div className="container">
+        {/* Header */}
         <div className="flex items-center justify-between mb-14">
           <div>
             <h2 className="text-4xl font-display font-bold mb-3">
@@ -184,6 +204,7 @@ export default function FeaturedGames() {
           </Link>
         </div>
 
+        {/* Grid of Games */}
         <div className="grid md:grid-cols-3 gap-8">
           {games.map((game) => (
             <div
@@ -220,13 +241,28 @@ export default function FeaturedGames() {
                 {game.players.toLocaleString()} playing
               </div>
 
-              <button className="w-full mt-6 rounded-xl bg-[#00FFA3] py-3.5 font-semibold text-[#07140F] transition-all hover:bg-[rgba(0,255,163,0.9)] hover:shadow-[0_0_30px_rgba(0,255,163,0.35)]">
+              {/* WHY IS THIS BUTTON ACTION CHANGING?
+                  Instead of a static button, it now triggers handlePlayNow to launch the interactive modal.
+               */}
+              <button 
+                onClick={() => handlePlayNow(game)}
+                className="w-full mt-6 rounded-xl bg-[#00FFA3] py-3.5 font-semibold text-[#07140F] transition-all hover:bg-[rgba(0,255,163,0.9)] hover:shadow-[0_0_30px_rgba(0,255,163,0.35)]"
+              >
                 Play Now — {game.credits} credits
               </button>
             </div>
           ))}
         </div>
       </div>
+
+      {/* 
+          Integrating the Modal component. It stays hidden until isModalOpen is true.
+      */}
+      <PlayNowModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        game={selectedGame} 
+      />
     </section>
   );
-}
+}
