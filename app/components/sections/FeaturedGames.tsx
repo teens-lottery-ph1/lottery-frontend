@@ -152,17 +152,21 @@ export default function FeaturedGames() {
         const json = await res.json();
 
         if (json.success) {
+          console.log("API DRAW DATA:", json.data); // DEBUG LOG
           // Mapping the backend data structure to our frontend Game type
-          const formattedGames = json.data.map((item: { id: any; name: any; drawDate: any; prizePool: any; ticketPrice: any; isGuaranteed: any; currentEntries: any; }) => ({
-            id: item.id,
-            name: item.name,
-            date: item.drawDate,
-            prize: `₹${Number(item.prizePool).toLocaleString()}`,
-            credits: Number(item.ticketPrice),
-            featured: item.isGuaranteed,
-            players: item.currentEntries ,
-          }));
-
+          const formattedGames = json.data.map((item: any) => {
+            const ticketPrice = item.ticketPrice || item.ticket_price || item.amount || 0;
+            console.log(`Mapping game: ${item.name}, Price field found:`, ticketPrice); // DEBUG LOG
+            return {
+              id: item.id,
+              name: item.name,
+              date: item.drawDate,
+              prize: `₹${Number(item.prizePool).toLocaleString()}`,
+              credits: Number(ticketPrice),
+              featured: item.isGuaranteed,
+              players: item.currentEntries,
+            };
+          });
           setGames(formattedGames);
         }
       } catch (error) {
@@ -265,4 +269,4 @@ export default function FeaturedGames() {
       />
     </section>
   );
-}
+}

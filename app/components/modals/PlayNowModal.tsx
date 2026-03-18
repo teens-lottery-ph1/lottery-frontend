@@ -61,11 +61,12 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
   const handlePayment = async () => {
     if (selectedNumbers.length === 0) return;
     setIsProcessing(true);
+    console.log("PAYMENT INITIALIZED:", { totalAmount, selectedNumbers, gameCredits: game.credits }); // DEBUG LOG
     try {
       const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: totalAmount, userId: "user_dev", walletId: "wallet_dev" }),
+        body: JSON.stringify({ amount: totalAmount, userId: "872affae-8481-4fc1-a07e-5499ea394652", walletId: "4d2f754a-eaeb-4938-9248-15a47eb17de7" }),
       });
       const orderData = await orderRes.json();
 
@@ -87,9 +88,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
               drawId: game.id,
               ticketNumber: selectedNumbers[0].toString(),
               pickedNumbers: selectedNumbers.join(","),
-              userId: "user_dev",
+              userId: "872affae-8481-4fc1-a07e-5499ea394652",
               amount: totalAmount,
-              walletId: "wallet_dev"
+              walletId: "4d2f754a-eaeb-4938-9248-15a47eb17de7"
             }),
           });
           if (verifyRes.ok) {
