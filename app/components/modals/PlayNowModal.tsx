@@ -32,6 +32,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [bookedNumbers, setBookedNumbers] = useState<number[]>([]);
 
   // Dynamically load Razorpay for the payment step
   useEffect(() => {
@@ -41,6 +42,50 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
   }, []);
+
+  // Fetch booked tickets when modal opens
+  useEffect(() => {
+    if (isOpen && game) {
+      const fetchBookedTickets = async () => {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/draws/${game.id}/tickets`);
+          if (res.ok) {
+            const data = await res.json();
+            let parsedNumbers: number[] = [];
+            
+            // Accommodate array responses or object responses { bookedNumbers: [...] }
+            const rawArray = Array.isArray(data) ? data : (data.bookedNumbers || data.data || data.tickets || []);
+            
+            if (Array.isArray(rawArray)) {
+              rawArray.forEach((item: any) => {
+                if (typeof item === 'number') {
+                  parsedNumbers.push(item);
+                } else if (typeof item === 'string') {
+                  item.split(',').forEach(n => parsedNumbers.push(parseInt(n.trim(), 10)));
+                } else if (item && typeof item === 'object') {
+                  // If the backend returned rows from db directly e.g. { pickedNumbers: '1,2,3' }
+                  const nums = item.pickedNumbers || item.ticketNumber || item.number || "";
+                  if (typeof nums === 'string') {
+                    nums.split(',').forEach(n => parsedNumbers.push(parseInt(n.trim(), 10)));
+                  } else if (typeof nums === 'number') {
+                    parsedNumbers.push(nums);
+                  }
+                }
+              });
+            }
+            // Remove dups and NaN
+            const validNumbers = Array.from(new Set(parsedNumbers.filter(n => !isNaN(n))));
+            setBookedNumbers(validNumbers);
+          } else {
+            console.error("Failed to fetch tickets, status:", res.status);
+          }
+        } catch (err) {
+          console.error("Failed to fetch booked tickets network error:", err);
+        }
+      };
+      fetchBookedTickets();
+    }
+  }, [isOpen, game]);
 
   if (!isOpen || !game) return null;
 
@@ -78,24 +123,36 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
         description: `Playing ${game.name}`,
         order_id: orderData.id,
         handler: async (response: any) => {
-          const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              drawId: game.id,
-              ticketNumber: selectedNumbers[0].toString(),
-              pickedNumbers: selectedNumbers.join(","),
-              userId: "872affae-8481-4fc1-a07e-5499ea394652",
-              amount: totalAmount,
-              walletId: "4d2f754a-eaeb-4938-9248-15a47eb17de7"
-            }),
-          });
-          if (verifyRes.ok) {
+          try {
+            // Submit verification sequentially for EACH selected box. 
+            // This guarantees the backend individually records each box correctly, 
+            // even if the backend endpoint is only reading the first ticketNumber.
+            for (const num of selectedNumbers) {
+              const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  drawId: game.id,
+                  ticketNumber: num.toString(),
+                  pickedNumbers: num.toString(),
+                  userId: "872affae-8481-4fc1-a07e-5499ea394652",
+                  amount: totalAmount / selectedNumbers.length,
+                  walletId: "4d2f754a-eaeb-4938-9248-15a47eb17de7"
+                }),
+              });
+              if (!verifyRes.ok) {
+                const errData = await verifyRes.json().catch(() => ({}));
+                throw new Error(errData.error || `Server Error for ticket ${num}`);
+              }
+            }
             alert("Success! Your tickets are booked.");
             onClose();
+          } catch (err: any) {
+            console.error("Network Error during Verification:", err);
+            alert(`Verification failed: ${err.message || 'Could not verify payment. Please ensure the backend is running.'}`);
           }
         },
         theme: { color: "#00FFA3" },
@@ -147,16 +204,16 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => setSelectedNumbers([])}
                   className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/10 text-red-400 text-sm font-bold border border-red-500/20 hover:bg-red-500/20 transition-all"
                 >
                   <Trash2 className="w-4 h-4" /> Clear
                 </button>
-                <button 
-                  onClick={onClose} 
+                <button
+                  onClick={onClose}
                   className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all border border-white/10 text-white"
                 >
                   <X className="w-6 h-6" />
@@ -166,7 +223,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
 
             {/* Content Area */}
             <div className="relative z-10 flex-1 overflow-hidden flex flex-col md:flex-row">
-              
+
               {/* Sidebar Info (Desktop Only) */}
               <div className="w-full md:w-64 p-8 border-r border-white/5 flex flex-col justify-between bg-white/[0.02]">
                 <div>
@@ -190,7 +247,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                     <p className="text-[#00FFA3] text-xs font-bold">{selectedNumbers.length}</p>
                   </div>
                   <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${(selectedNumbers.length / 10) * 100}%` }}
                       className="h-full bg-[#00FFA3] shadow-[0_0_10px_#00FFA3]"
@@ -203,16 +260,16 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
               <div className="flex-1 p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <h3 className="text-xl font-bold text-white">Pick Your Lucky Numbers</h3>
-                  
+
                   {/* Premium Pagination Toggle */}
                   <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
-                    <button 
+                    <button
                       onClick={() => setCurrentPage(1)}
                       className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${currentPage === 1 ? 'bg-[#00FFA3] text-black shadow-lg shadow-[#00FFA3]/20' : 'text-white/50 hover:text-white'}`}
                     >
                       1 - 50
                     </button>
-                    <button 
+                    <button
                       onClick={() => setCurrentPage(2)}
                       className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${currentPage === 2 ? 'bg-[#00FFA3] text-black shadow-lg shadow-[#00FFA3]/20' : 'text-white/50 hover:text-white'}`}
                     >
@@ -233,24 +290,29 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                     >
                       {visibleNumbers.map((num) => {
                         const isSelected = selectedNumbers.includes(num);
+                        const isBooked = bookedNumbers.includes(num); // Check if box is already booked
+
                         return (
                           <motion.button
                             key={num}
-                            whileHover={{ scale: 1.1, y: -2 }} // WHY? Makes the buttons feel interactive and clickable
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => toggleNumber(num)}
-                            disabled={isProcessing}
+                            whileHover={isBooked ? {} : { scale: 1.1, y: -2 }} // WHY? Makes the buttons feel interactive and clickable
+                            whileTap={isBooked ? {} : { scale: 0.95 }}
+                            onClick={() => !isBooked && toggleNumber(num)}
+                            disabled={isProcessing || isBooked}
                             className={`
                               relative h-12 rounded-xl flex items-center justify-center text-sm font-black transition-all duration-300
-                              ${isSelected 
-                                ? "bg-[#00FFA3] text-black shadow-[0_0_25px_rgba(0,255,163,0.5)] border-[#00FFA3]" 
-                                : "bg-white/5 border border-white/10 text-white/40 hover:border-[#00FFA3]/50 hover:text-white"
+                              ${
+                                isBooked
+                                  ? "bg-red-500/10 border border-red-500/20 text-red-500/50 cursor-not-allowed" // Disabled booked styling
+                                  : isSelected
+                                  ? "bg-[#00FFA3] text-black shadow-[0_0_25px_rgba(0,255,163,0.5)] border-[#00FFA3]"
+                                  : "bg-white/5 border border-white/10 text-white/40 hover:border-[#00FFA3]/50 hover:text-white"
                               }
                             `}
                           >
                             {num}
                             {isSelected && (
-                              <motion.div 
+                              <motion.div
                                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                                 className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center text-[#00FFA3] shadow-lg"
                               >

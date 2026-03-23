@@ -62,3 +62,33 @@ git commit -m "Remove unwanted file from PR"
 git push
 OR
 Creat new branch and do cherrypick
+
+
+
+
+
+Frontend Implementation Walkthrough
+What Was Accomplished
+Since the backend updates were already completed, the following frontend changes were made to complete the workflow:
+
+Ticket Grid Reflection (
+PlayNowModal.tsx
+)
+
+Added an asynchronous fetch call within a useEffect hook to GET /api/draws/${game.id}/tickets that runs every time the modal is opened.
+Leveraged the dynamic bookedNumbers state to cross-reference with the generated grid items.
+Refactored the motion.button map loop: Boxes that correspond to numbers in bookedNumbers are now disabled, rendered with a red "unavailable" style, and restricted from interaction (onClick and whileTap overrides).
+Admin Categories Interface (
+app/admin/categories/page.tsx
+)
+
+Created a new Admin dashboard component tailored to gameTypes / Categories.
+List View: The page fetches data from GET /api/categories and renders an interactive data table with category IDs, icons, descriptions, and statuses.
+Creation Form: Integrated a user-friendly form on the left pane allowing admins to configure the Category Name, Description, and Icon emoji. The form posts to POST /api/categories and triggers a component refresh upon success.
+Verification
+You can verify the updates locally by checking the Next.js dev server:
+
+Open the /admin/categories route to test submitting new Game Types.
+Trigger the 
+PlayNowModal
+ inside the app to review how pre-booked seats retrieved from your backend are locked out.
