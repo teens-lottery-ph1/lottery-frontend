@@ -32,8 +32,10 @@ const sidebarSections = [
         badgeColor: 'green',
         badge_pulse: true,
       },
+      { label: 'Categories', href: '/admin/categories', icon: '🎲' },
       { label: 'Levels & Rewards', href: '/admin/levels', icon: '🏆' },
       { label: 'Payments', href: '/admin/payments', icon: '💳' },
+      { label: 'Tickets', href: '/admin/tickets', icon: '🎫' },
     ],
   },
   {

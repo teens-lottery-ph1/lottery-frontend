@@ -97,7 +97,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
       prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num]
     );
   };
-
+  
   // Pagination logic (50 per page)
   const startNum = (currentPage - 1) * 50 + 1;
   const visibleNumbers = Array.from({ length: 50 }, (_, i) => startNum + i);
