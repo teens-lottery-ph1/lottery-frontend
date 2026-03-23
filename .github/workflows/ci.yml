@@ -4,6 +4,10 @@ on:
   push:
     branches: [ci-cd-setup]
 
+# Fix future Node.js warning (optional but recommended)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,6 +56,9 @@ jobs:
             npm run build
 
             echo "Restarting application..."
-            pm2 restart lottery-app
+            pm2 restart lottery-app || pm2 start "npx next start -H 0.0.0.0 -p 3000" --name lottery-app
+
+            echo "Saving PM2 process..."
+            pm2 save
 
             echo "Deployment completed successfully!"
