@@ -52,7 +52,7 @@ jobs:
             git reset --hard origin/main
 
             echo "Installing dependencies..."
-            npm install --production
+            npm ci --omit=dev
 
             echo "Restarting application..."
             pm2 restart lottery-app || pm2 start "npx next start -H 0.0.0.0 -p 3000" --name lottery-app
