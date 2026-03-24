@@ -24,6 +24,44 @@ export default function DashboardPage() {
   // GET /api/admin/dashboard/stats
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
   const [totalSeconds, setTotalSeconds] = useState(0);
+  
+  // ✅ Revenue states
+  const [revenue, setRevenue] = useState<number>(0);
+  const [loadingRevenue, setLoadingRevenue] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // ✅ Fetch revenue
+  const fetchRevenue = async () => {
+    setIsUpdating(true);
+
+    try {
+      const res = await fetch('http://localhost:10000/api/admin/revenue');
+      const data = await res.json();
+
+      if (data.success) {
+        setRevenue(data.revenue);
+      }
+    } catch (error) {
+      console.error('Error fetching revenue:', error);
+    } finally {
+      setLoadingRevenue(false);
+
+      setTimeout(() => {
+        setIsUpdating(false);
+      }, 300);
+    }
+  };
+
+  // ✅ Auto refresh every 10 seconds
+  useEffect(() => {
+    fetchRevenue();
+
+    const interval = setInterval(() => {
+      fetchRevenue();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Countdown timer
   useEffect(() => {
@@ -76,11 +114,15 @@ export default function DashboardPage() {
           changeType="up"
           accentColor="#1e40af"
         />
-        <StatCard
+         <StatCard
           icon="💰"
-          value="₹0"
+          value={
+            loadingRevenue
+              ? 'Loading...'
+              : `₹${formatINR(revenue)}`
+          }
           label="Total Revenue"
-          change="0%"
+          change={isUpdating ? 'Updating...' : 'Live'}
           changeType="up"
           accentColor="#16a34a"
         />
