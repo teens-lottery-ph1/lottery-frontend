@@ -13,71 +13,75 @@ import {
   CreditCard,
 } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
-const transactions = [
-  {
-    title: "Deposit via UPI",
-    date: "Feb 22, 2026",
-    amount: "+$100.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Mega Millions Ticket",
-    date: "Feb 22, 2026",
-    amount: "-$10.00",
-    status: "completed",
-    type: "debit",
-  },
-  {
-    title: "Lucky 7 — Won!",
-    date: "Feb 20, 2026",
-    amount: "+$500.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Power Ball Ticket x3",
-    date: "Feb 19, 2026",
-    amount: "-$30.00",
-    status: "completed",
-    type: "debit",
-  },
-  {
-    title: "Referral Bonus — James",
-    date: "Feb 18, 2026",
-    amount: "+$20.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Deposit via Card",
-    date: "Feb 15, 2026",
-    amount: "+$200.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Withdrawal to Bank",
-    date: "Feb 14, 2026",
-    amount: "-$300.00",
-    status: "pending",
-    type: "debit",
-  },
-];
+/* ================= TYPES ================= */
+
+type WalletType = {
+  balance: number;
+  bonus_balance: number;
+};
+
+type TransactionType = {
+  id: string;
+  amount: string;
+  type: string;
+  status: string;
+  createdAt: string;
+};
+
+/* ================= API ================= */
+
+const BASE_URL = "http://localhost:10000/api/wallet";
+
+// ✅ SAME USER ID (backend testing id)
+const USER_ID = "f6d0c61e-1882-4264-8e7a-36736a994300";
+
+/* ================= COMPONENT ================= */
 
 export default function WalletPage() {
+  const [wallet, setWallet] = useState<WalletType | null>(null);
+  const [transactions, setTransactions] = useState<TransactionType[]>([]);
+
+  useEffect(() => {
+    fetchWallet();
+  }, []);
+
+  const fetchWallet = async () => {
+    try {
+      const walletRes = await fetch(
+        `${BASE_URL}/balance?userId=${USER_ID}`
+      );
+
+      const txRes = await fetch(
+        `${BASE_URL}/transactions?userId=${USER_ID}`
+      );
+
+      const walletData = await walletRes.json();
+      const txData = await txRes.json();
+
+      setWallet(walletData.data);
+      setTransactions(txData.data || []);
+    } catch (err) {
+      console.error("API Error:", err);
+    }
+  };
+
   return (
     <div className="p-6 text-white max-w-7xl mx-auto">
+
       {/* TOP SUMMARY */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
         {/* BALANCE CARD */}
         <div className="relative lg:col-span-2 bg-gradient-to-br from-[#0f1f1a] to-[#0b1511] rounded-2xl p-6 border border-[#1f3d32] overflow-hidden">
-          {/* background image */}
+
           <Image
             src="/images/wallet-hero.png"
             alt="wallet bg"
             fill
+            sizes="100vw"
+            priority
             className="object-cover opacity-10"
           />
 
@@ -88,7 +92,7 @@ export default function WalletPage() {
             </div>
 
             <h1 className="text-5xl font-bold text-yellow-400 mt-4">
-              $1,480.00
+              ₹{wallet?.balance ?? 0}
             </h1>
 
             <div className="flex gap-3 mt-6">
@@ -108,17 +112,21 @@ export default function WalletPage() {
           <div className="bg-[#0f1613] rounded-2xl p-5 border border-[#1f2a26]">
             <div className="flex items-center gap-2 text-emerald-400">
               <TrendingUp size={18} />
-              <p>Total Won</p>
+              <p>Total Bonus</p>
             </div>
-            <h2 className="text-3xl font-bold mt-2">$2,500.00</h2>
+            <h2 className="text-3xl font-bold mt-2">
+              ₹{wallet?.bonus_balance ?? 0}
+            </h2>
           </div>
 
           <div className="bg-[#0f1613] rounded-2xl p-5 border border-[#1f2a26]">
             <div className="flex items-center gap-2 text-yellow-400">
               <CreditCard size={18} />
-              <p>Credits Used</p>
+              <p>Transactions</p>
             </div>
-            <h2 className="text-3xl font-bold mt-2">3,450</h2>
+            <h2 className="text-3xl font-bold mt-2">
+              {transactions.length}
+            </h2>
           </div>
         </div>
       </div>
@@ -138,7 +146,7 @@ export default function WalletPage() {
           },
           {
             title: "Referral Code",
-            desc: "Earn $20 per referral",
+            desc: "Earn ₹20 per referral",
             icon: <Users />,
           },
           {
@@ -168,20 +176,20 @@ export default function WalletPage() {
         </h2>
 
         <div className="max-h-[420px] overflow-y-auto">
-          {transactions.map((tx, i) => (
+          {transactions.map((tx) => (
             <div
-              key={i}
+              key={tx.id}
               className="flex items-center justify-between px-6 py-5 border-b border-[#1f2a26]"
             >
               <div className="flex items-center gap-4">
                 <div
                   className={`p-2 rounded-full ${
-                    tx.type === "credit"
+                    tx.type === "deposit"
                       ? "bg-emerald-500/10 text-emerald-400"
                       : "bg-gray-500/10 text-gray-400"
                   }`}
                 >
-                  {tx.type === "credit" ? (
+                  {tx.type === "deposit" ? (
                     <ArrowDownLeft />
                   ) : (
                     <ArrowUpRight />
@@ -189,28 +197,18 @@ export default function WalletPage() {
                 </div>
 
                 <div>
-                  <p className="font-medium">{tx.title}</p>
-                  <p className="text-sm text-gray-400">{tx.date}</p>
+                  <p className="font-medium">{tx.type}</p>
+                  <p className="text-sm text-gray-400">
+                    {new Date(tx.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
 
               <div className="text-right">
-                <p
-                  className={`font-semibold ${
-                    tx.type === "credit"
-                      ? "text-emerald-400"
-                      : "text-white"
-                  }`}
-                >
-                  {tx.amount}
+                <p className="font-semibold text-white">
+                  ₹{tx.amount}
                 </p>
-                <p
-                  className={`text-sm ${
-                    tx.status === "pending"
-                      ? "text-yellow-400"
-                      : "text-gray-400"
-                  }`}
-                >
+                <p className="text-sm text-gray-400">
                   {tx.status}
                 </p>
               </div>
@@ -218,6 +216,7 @@ export default function WalletPage() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }
