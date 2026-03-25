@@ -34,7 +34,7 @@ type TransactionType = {
 
 const BASE_URL = "http://localhost:10000/api/wallet";
 
-// ✅ SAME USER ID (backend testing id)
+// fallback (testing)
 const USER_ID = "a9824974-b278-4c38-a383-188622ddf7a9";
 
 /* ================= COMPONENT =============== */
@@ -49,12 +49,21 @@ export default function WalletPage() {
 
   const fetchWallet = async () => {
     try {
+      // cookies 
       const walletRes = await fetch(
-        `${BASE_URL}/balance?userId=${USER_ID}`
+        `${BASE_URL}/balance?userId=${USER_ID}`,
+        {
+          method: "GET",
+          credentials: "include", // 🔥 cookies support
+        }
       );
 
       const txRes = await fetch(
-        `${BASE_URL}/transactions?userId=${USER_ID}`
+        `${BASE_URL}/transactions?userId=${USER_ID}`,
+        {
+          method: "GET",
+          credentials: "include", // 🔥 cookies support
+        }
       );
 
       const walletData = await walletRes.json();
