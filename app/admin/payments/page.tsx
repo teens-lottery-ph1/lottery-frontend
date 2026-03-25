@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect import
 import { transactions } from '../_components/mock-data';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
@@ -42,10 +42,30 @@ export default function PaymentsPage() {
     return matchesDate && matchesType && matchesStatus;
   });
 
-  const totalRevenue = 0;
-  const totalDeposits = 0;
-  const totalWithdrawals = 0;
-  const pendingAmount = 0;
+  // Added state for payment stats
+  const [totalRevenue, setTotalRevenue] = useState(0); 
+  const [totalDeposits, setTotalDeposits] = useState(0);
+  const [totalWithdrawals, setTotalWithdrawals] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState(0);
+
+  // Added useEffect to fetch real-time payment status
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`); // API call to fetch stats using env var
+        if (res.ok) {
+          const data = await res.json();
+          setTotalRevenue(Number(data.totalRevenue) || 0); // Update total revenue
+          setTotalDeposits(Number(data.totalDeposits) || 0); // Update total deposits
+          setTotalWithdrawals(Number(data.totalWithdrawals) || 0); // Update total withdrawals
+          setPendingAmount(Number(data.totalPending) || 0); // Update total pending
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // CSV Export
   const handleExportCSV = () => {
