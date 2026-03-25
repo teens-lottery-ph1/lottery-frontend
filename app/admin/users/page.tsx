@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { users } from '../_components/mock-data';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
@@ -19,6 +19,25 @@ export default function UsersPage() {
   const [levelFilter, setLevelFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+ // ✅ NEW: total users state
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+
+  // ✅ NEW: fetch users count
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+        const data = await res.json();
+
+        // adjust based on your API response
+        setTotalUsers(data.length || data.users?.length || 0);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Filter users
   const filteredUsers = users.filter((user) => {
@@ -100,7 +119,7 @@ export default function UsersPage() {
       <div className="grid grid-cols-4 gap-6">
         <StatCard
           icon="👥"
-          value="24,891"
+          value={totalUsers.toString()}
           label="Total Users"
           accentColor="#1e40af"
         />
