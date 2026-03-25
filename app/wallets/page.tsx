@@ -35,9 +35,9 @@ type TransactionType = {
 const BASE_URL = "http://localhost:10000/api/wallet";
 
 // ✅ SAME USER ID (backend testing id)
-const USER_ID = "f6d0c61e-1882-4264-8e7a-36736a994300";
+const USER_ID = "a9824974-b278-4c38-a383-188622ddf7a9";
 
-/* ================= COMPONENT ================= */
+/* ================= COMPONENT =============== */
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState<WalletType | null>(null);
@@ -70,7 +70,6 @@ export default function WalletPage() {
   return (
     <div className="p-6 text-white max-w-7xl mx-auto">
 
-      {/* TOP SUMMARY */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* BALANCE CARD */}
