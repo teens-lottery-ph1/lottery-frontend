@@ -35,7 +35,7 @@ export default function DashboardPage() {
   // ✅ Fetch users count
   const fetchUsersCount = async () => {
     try {
-      const res = await fetch('http://localhost:10000/api/users');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
       const data = await res.json();
 
       // adjust based on API response
@@ -50,7 +50,7 @@ export default function DashboardPage() {
     setIsUpdating(true);
 
     try {
-      const res = await fetch('http://localhost:10000/api/revenue');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/revenue`);
       const data = await res.json();
 
       if (data.success) {
