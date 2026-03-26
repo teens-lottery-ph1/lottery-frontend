@@ -32,7 +32,7 @@ type TransactionType = {
 
 /* ================= API ================= */
 
-const BASE_URL = "http://localhost:10000/api/wallet";
+ const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // fallback (testing)
 const USER_ID = "a9824974-b278-4c38-a383-188622ddf7a9";
