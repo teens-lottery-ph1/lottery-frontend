@@ -11,32 +11,58 @@ export default function SignupPage() {
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
 
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState("");
+  const [success,setSuccess] = useState("");
+
   const signup = async (e:any) => {
 
     e.preventDefault();
 
-    const res = await fetch("http://localhost:5000/api/auth/register",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        username,
-        email,
-        password
-      })
-    });
+    try {
 
-    const data = await res.json();
+      setLoading(true);
+      setError("");
+      setSuccess("");
 
-    if(data.success){
+      const API =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
-      alert("Account created successfully");
-      router.push("/login");
+      const res = await fetch(`${API}/api/auth/register`,{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          username,
+          email,
+          password
+        })
+      });
 
-    }else{
+      const data = await res.json();
 
-      alert(data.message);
+      if(data.success){
+
+        setSuccess("Account created successfully");
+
+        setTimeout(()=>{
+          router.push("/login");
+        },1500);
+
+      }else{
+
+        setError(data.message || "Signup failed");
+
+      }
+
+    } catch (error){
+
+      setError("Something went wrong");
+
+    } finally {
+
+      setLoading(false);
 
     }
 
@@ -54,6 +80,20 @@ export default function SignupPage() {
         <h2 className="text-white text-xl font-bold text-center">
           Sign Up
         </h2>
+
+        {/* Success Message */}
+        {success && (
+          <div className="bg-green-500/20 text-green-400 px-3 py-2 rounded text-sm">
+            {success}
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/20 text-red-400 px-3 py-2 rounded text-sm">
+            {error}
+          </div>
+        )}
 
         <input
           type="text"
@@ -81,9 +121,10 @@ export default function SignupPage() {
 
         <button
           type="submit"
-          className="w-full bg-green-500 p-2 rounded font-semibold"
+          disabled={loading}
+          className="w-full bg-green-500 p-2 rounded font-semibold disabled:opacity-60"
         >
-          Create Account
+          {loading ? "Creating..." : "Create Account"}
         </button>
 
         <p className="text-center text-sm text-gray-400">

@@ -65,7 +65,11 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
 
-  // Get config for current page or use defaults
+  // ✅ Skip layout for login
+  if (pathname.startsWith('/admin/login')) {
+    return <>{children}</>;
+  }
+
   const getPageConfig = () => {
     for (const [path, config] of Object.entries(pageConfig)) {
       if (pathname.startsWith(path)) {
@@ -78,28 +82,39 @@ export default function AdminLayout({
   const config = getPageConfig();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex h-screen bg-gray-50 text-gray-800">
+      
       {/* Sidebar */}
-      <Sidebar />
+      <div className="w-[240px] fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm z-50">
+        <Sidebar />
+      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden ml-[240px]">
+      {/* Main Section */}
+      <div className="flex-1 flex flex-col ml-[240px]">
+        
         {/* Topbar */}
-        <Topbar title={config.title} subtitle={config.subtitle} />
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+          <Topbar title={config.title} subtitle={config.subtitle} />
+        </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-7 scrollbar-thin scrollbar-thumb-[#d1d5db] scrollbar-track-transparent">
-          {children}
+        <main className="flex-1 overflow-y-auto p-8">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              {children}
+            </div>
+          </div>
         </main>
       </div>
 
+      {/* Scrollbar Styling */}
       <style jsx global>{`
         ::-webkit-scrollbar {
-          width: 4px;
+          width: 6px;
         }
         ::-webkit-scrollbar-thumb {
           background: #d1d5db;
-          border-radius: 2px;
+          border-radius: 6px;
         }
         ::-webkit-scrollbar-track {
           background: transparent;
