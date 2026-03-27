@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [username,setUsername] = useState("");
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
+  const [phone,setPhone] = useState("");
 
   const [loading,setLoading] = useState(false);
   const [error,setError] = useState("");
@@ -26,7 +27,7 @@ export default function SignupPage() {
       setSuccess("");
 
       const API =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
 
       const res = await fetch(`${API}/api/auth/register`,{
         method:"POST",
@@ -34,9 +35,12 @@ export default function SignupPage() {
           "Content-Type":"application/json"
         },
         body:JSON.stringify({
-          username,
+          name: username,
           email,
-          password
+          password,
+          phone,
+          level_id: 1,
+          country_id: 1
         })
       });
 
@@ -81,14 +85,12 @@ export default function SignupPage() {
           Sign Up
         </h2>
 
-        {/* Success Message */}
         {success && (
           <div className="bg-green-500/20 text-green-400 px-3 py-2 rounded text-sm">
             {success}
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-500/20 text-red-400 px-3 py-2 rounded text-sm">
             {error}
@@ -109,6 +111,14 @@ export default function SignupPage() {
           className="w-full p-2 rounded bg-zinc-800 text-white"
           value={email}
           onChange={(e)=>setEmail(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="Phone"
+          className="w-full p-2 rounded bg-zinc-800 text-white"
+          value={phone}
+          onChange={(e)=>setPhone(e.target.value)}
         />
 
         <input

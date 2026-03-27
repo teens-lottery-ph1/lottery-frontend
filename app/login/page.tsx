@@ -76,6 +76,17 @@ className="w-full bg-green-500 p-2 rounded font-semibold"
 Login
 </button>
 
+{/* Signup Link */}
+<p className="text-center text-sm text-gray-400">
+Don't have an account?{" "}
+<span
+onClick={()=>router.push("/signup")}
+className="text-blue-400 cursor-pointer hover:underline"
+>
+Sign up
+</span>
+</p>
+
 </form>
 
 </div>
