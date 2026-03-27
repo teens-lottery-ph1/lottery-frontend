@@ -204,7 +204,7 @@ export default function NotificationsPage() {
                 <option>Active Players</option>
                 <option>VIP Users</option>
                 <option>New Users (This Week)</option>
-                <option>Inactive (>30 days)</option>
+                <option>Inactive (&gt;30 days)</option>
                 <option>Custom Segment</option>
               </select>
             </div>

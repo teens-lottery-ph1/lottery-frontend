@@ -33,7 +33,7 @@ const sidebarSections = [
         badge_pulse: true,
       },
       { label: 'Categories', href: '/admin/categories', icon: '🎲' },
-      { label: 'Levels & Rewards', href: '/admin/levels', icon: '🏆' },
+      { label: 'Levels & Rewards', href: '/admin/levels-game', icon: '🏆' },
       { label: 'Payments', href: '/admin/payments', icon: '💳' },
       { label: 'Tickets', href: '/admin/tickets', icon: '🎫' },
     ],
@@ -95,23 +95,21 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-r-xl text-[13.5px] transition-all ${
-                    isActive(item.href)
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-r-xl text-[13.5px] transition-all ${isActive(item.href)
                       ? 'text-[#d97706] bg-[#fef3c7] border-l-2 border-[#d97706]'
                       : 'text-[#4b5563] hover:text-[#1f2937] hover:bg-[#f0f1f3]'
-                  }`}
+                    }`}
                 >
                   <span className="text-lg">{item.icon}</span>
                   <span className="flex-1">{item.label}</span>
                   {item.badge && (
                     <span
-                      className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
-                        item.badgeColor === 'green'
+                      className={`text-[10px] font-semibold px-2 py-1 rounded-full ${item.badgeColor === 'green'
                           ? 'bg-[#dcfce7] text-[#16a34a]'
                           : item.badgeColor === 'red'
                             ? 'bg-[#fee2e2] text-[#dc2626]'
                             : 'bg-[#f3f4f6] text-[#4b5563]'
-                      } ${item.badge_pulse ? 'animate-pulse' : ''}`}
+                        } ${item.badge_pulse ? 'animate-pulse' : ''}`}
                     >
                       {item.badge}
                     </span>

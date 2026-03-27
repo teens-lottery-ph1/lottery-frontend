@@ -11,8 +11,12 @@ import {
   Clock,
   TrendingUp,
   CreditCard,
+  AlertCircle,
+  CheckCircle2
 } from "lucide-react";
 import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 
 const transactions = [
   {
@@ -64,11 +68,94 @@ const transactions = [
     status: "pending",
     type: "debit",
   },
-];
+];function WalletContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const amount = searchParams.get("amount");
+  const poolId = searchParams.get("poolId");
+  const from = searchParams.get("from");
 
-export default function WalletPage() {
+  const [wallet, setWallet] = useState({ available: 0, locked: 0 });
+  const [isPaying, setIsPaying] = useState(false);
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/wallet`);
+        const data = await res.json();
+        if (data && !data.error) {
+          setWallet(data);
+        }
+      } catch (err) {
+        console.error("Wallet fetch error:", err);
+      }
+    };
+    fetchWallet();
+  }, [BASE_URL]);
+
+  const handlePay = async () => {
+    setIsPaying(true);
+    try {
+      // 1. Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // 2. Call the ACTUAL join API if we have a poolId
+      if (poolId) {
+        const res = await fetch(`${BASE_URL}/api/levels/join`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ poolId }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to join level");
+        }
+      }
+
+      alert(`Payment of ₹${amount} successful!`);
+      window.location.href = "/levels";
+    } catch (err: any) {
+      alert(err.message || "Payment failed");
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   return (
-    <div className="p-6 text-white max-w-7xl mx-auto">
+    <>
+      {/* PAYMENT ALERT IF REDIRECTED */}
+      {amount && (
+        <div className="mb-8 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full -mr-16 -mt-16" />
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500">
+              <AlertCircle size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-white">Complete Your Entry</h3>
+              <p className="text-gray-400 text-sm">You are joining a Level Game. Please complete the payment of <span className="text-yellow-500 font-bold">₹{amount}</span>.</p>
+            </div>
+          </div>
+          <div className="flex gap-3 relative z-10 w-full md:w-auto">
+            <button 
+              onClick={handlePay}
+              disabled={isPaying}
+              className="flex-1 md:flex-none bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-8 py-3 rounded-xl transition-all shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2"
+            >
+              {isPaying ? "Processing..." : "PAY NOW"}
+              <CheckCircle2 size={18} />
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* TOP SUMMARY */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* BALANCE CARD */}
@@ -88,7 +175,7 @@ export default function WalletPage() {
             </div>
 
             <h1 className="text-5xl font-bold text-yellow-400 mt-4">
-              $1,480.00
+              ₹{wallet.available.toLocaleString()}
             </h1>
 
             <div className="flex gap-3 mt-6">
@@ -218,6 +305,16 @@ export default function WalletPage() {
           ))}
         </div>
       </div>
+    </>
+  );
+}
+
+export default function WalletPage() {
+  return (
+    <div className="p-6 text-white max-w-7xl mx-auto">
+      <Suspense fallback={<p className="text-gray-500">Loading wallet...</p>}>
+        <WalletContent />
+      </Suspense>
     </div>
   );
 }

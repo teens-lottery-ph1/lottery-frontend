@@ -6,7 +6,7 @@ interface StatCardProps {
   label: string;
   change?: string;
   changeType?: 'up' | 'down' | 'live';
-  accentColor: string;
+  accentColor?: string;
 }
 
 export default function StatCard({
@@ -15,7 +15,7 @@ export default function StatCard({
   label,
   change,
   changeType,
-  accentColor,
+  accentColor = '#d97706',
 }: StatCardProps) {
   return (
     <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 hover:border-[#9ca3af] hover:-translate-y-0.5 transition-all shadow-sm">
