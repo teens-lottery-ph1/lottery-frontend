@@ -32,37 +32,36 @@ type TransactionType = {
 
 /* ================= API ================= */
 
- const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
+const BASE_URL = "http://localhost:10000";
 
-// fallback (testing)
+// fallback (testing only)
 const USER_ID = "a9824974-b278-4c38-a383-188622ddf7a9";
 
-/* ================= COMPONENT =============== */
+/* ================= COMPONENT ================= */
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState<WalletType | null>(null);
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
 
   useEffect(() => {
-    fetchWallet();
+    fetchWalletData();
   }, []);
 
-  const fetchWallet = async () => {
+  const fetchWalletData = async () => {
     try {
-      // cookies 
       const walletRes = await fetch(
-        `${BASE_URL}/balance?userId=${USER_ID}`,
+        `${BASE_URL}/api/wallet/balance?userId=${USER_ID}`,
         {
           method: "GET",
-          credentials: "include", // 🔥 cookies support
+          credentials: "include", // ✅ COOKIE
         }
       );
 
       const txRes = await fetch(
-        `${BASE_URL}/transactions?userId=${USER_ID}`,
+        `${BASE_URL}/api/wallet/transactions?userId=${USER_ID}`,
         {
           method: "GET",
-          credentials: "include", // 🔥 cookies support
+          credentials: "include", // ✅ COOKIE
         }
       );
 
@@ -71,14 +70,15 @@ export default function WalletPage() {
 
       setWallet(walletData.data);
       setTransactions(txData.data || []);
-    } catch (err) {
-      console.error("API Error:", err);
+    } catch (error) {
+      console.error("❌ API ERROR:", error);
     }
   };
 
   return (
     <div className="p-6 text-white max-w-7xl mx-auto">
 
+      {/* ================= TOP ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* BALANCE CARD */}
@@ -88,8 +88,6 @@ export default function WalletPage() {
             src="/images/wallet-hero.png"
             alt="wallet bg"
             fill
-            sizes="100vw"
-            priority
             className="object-cover opacity-10"
           />
 
@@ -104,20 +102,20 @@ export default function WalletPage() {
             </h1>
 
             <div className="flex gap-3 mt-6">
-              <button className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-5 py-2 rounded-xl">
+              <button className="flex items-center gap-2 bg-emerald-500 px-5 py-2 rounded-xl">
                 <Plus size={18} /> Add Funds
               </button>
 
-              <button className="flex items-center gap-2 bg-[#1c2b26] hover:bg-[#22352f] px-5 py-2 rounded-xl">
+              <button className="flex items-center gap-2 bg-[#1c2b26] px-5 py-2 rounded-xl">
                 <CreditCard size={18} /> Withdraw
               </button>
             </div>
           </div>
         </div>
 
-        {/* SIDE STATS */}
+        {/* SIDE CARDS */}
         <div className="flex flex-col gap-6">
-          <div className="bg-[#0f1613] rounded-2xl p-5 border border-[#1f2a26]">
+          <div className="bg-[#0f1613] rounded-2xl p-5 border">
             <div className="flex items-center gap-2 text-emerald-400">
               <TrendingUp size={18} />
               <p>Total Bonus</p>
@@ -127,7 +125,7 @@ export default function WalletPage() {
             </h2>
           </div>
 
-          <div className="bg-[#0f1613] rounded-2xl p-5 border border-[#1f2a26]">
+          <div className="bg-[#0f1613] rounded-2xl p-5 border">
             <div className="flex items-center gap-2 text-yellow-400">
               <CreditCard size={18} />
               <p>Transactions</p>
@@ -139,33 +137,17 @@ export default function WalletPage() {
         </div>
       </div>
 
-      {/* ACTION CARDS */}
+      {/* ================= ACTION CARDS ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
         {[
-          {
-            title: "Buy Tickets",
-            desc: "Purchase lottery tickets",
-            icon: <Ticket />,
-          },
-          {
-            title: "Auto-Draw",
-            desc: "Set up subscriptions",
-            icon: <RefreshCcw />,
-          },
-          {
-            title: "Referral Code",
-            desc: "Earn ₹20 per referral",
-            icon: <Users />,
-          },
-          {
-            title: "Transaction History",
-            desc: "View all transactions",
-            icon: <Clock />,
-          },
+          { title: "Buy Tickets", desc: "Purchase lottery tickets", icon: <Ticket /> },
+          { title: "Auto-Draw", desc: "Set up subscriptions", icon: <RefreshCcw /> },
+          { title: "Referral Code", desc: "Earn rewards", icon: <Users /> },
+          { title: "Transaction History", desc: "View all transactions", icon: <Clock /> },
         ].map((item) => (
           <div
             key={item.title}
-            className="bg-[#0f1613] p-5 rounded-2xl border border-[#1f2a26] hover:border-emerald-500 transition"
+            className="bg-[#0f1613] p-5 rounded-2xl border hover:border-emerald-500"
           >
             <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 mb-3">
               {item.icon}
@@ -177,35 +159,23 @@ export default function WalletPage() {
         ))}
       </div>
 
-      {/* TRANSACTIONS */}
-      <div className="mt-12 bg-[#0f1613] rounded-2xl border border-[#1f2a26]">
-        <h2 className="text-xl font-semibold p-6 border-b border-[#1f2a26]">
+      {/* ================= TRANSACTIONS ================= */}
+      <div className="mt-12 bg-[#0f1613] rounded-2xl border">
+        <h2 className="text-xl font-semibold p-6 border-b">
           Recent Transactions
         </h2>
 
         <div className="max-h-[420px] overflow-y-auto">
           {transactions.map((tx) => (
-            <div
-              key={tx.id}
-              className="flex items-center justify-between px-6 py-5 border-b border-[#1f2a26]"
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className={`p-2 rounded-full ${
-                    tx.type === "deposit"
-                      ? "bg-emerald-500/10 text-emerald-400"
-                      : "bg-gray-500/10 text-gray-400"
-                  }`}
-                >
-                  {tx.type === "deposit" ? (
-                    <ArrowDownLeft />
-                  ) : (
-                    <ArrowUpRight />
-                  )}
+            <div key={tx.id} className="flex justify-between px-6 py-5 border-b">
+
+              <div className="flex gap-4">
+                <div className="p-2 rounded-full">
+                  {tx.type === "deposit" ? <ArrowDownLeft /> : <ArrowUpRight />}
                 </div>
 
                 <div>
-                  <p className="font-medium">{tx.type}</p>
+                  <p>{tx.type}</p>
                   <p className="text-sm text-gray-400">
                     {new Date(tx.createdAt).toLocaleDateString()}
                   </p>
@@ -213,13 +183,10 @@ export default function WalletPage() {
               </div>
 
               <div className="text-right">
-                <p className="font-semibold text-white">
-                  ₹{tx.amount}
-                </p>
-                <p className="text-sm text-gray-400">
-                  {tx.status}
-                </p>
+                <p>₹{tx.amount}</p>
+                <p className="text-sm text-gray-400">{tx.status}</p>
               </div>
+
             </div>
           ))}
         </div>
