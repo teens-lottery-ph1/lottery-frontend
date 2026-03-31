@@ -10,14 +10,17 @@ export default function LayoutWrapper({
 }: {
   children: React.ReactNode;
 }) {
+
   const pathname = usePathname();
 
-  // Skip all layout for admin routes
-  if (pathname.startsWith("/admin")) {
-    return <>{children}</>; // no Navbar, no Footer, no Sidebar
+  /* Pages with NO layout (auth pages) */
+  const noLayoutRoutes = ["/login", "/signup"];
+
+  if (noLayoutRoutes.includes(pathname) || pathname.startsWith("/admin")) {
+    return <>{children}</>;
   }
 
-  // Pages where sidebar should be hidden
+  /* Pages where sidebar should be hidden */
   const hideSidebarRoutes = ["/security", "/privacy", "/terms"];
   const shouldHideSidebar = hideSidebarRoutes.includes(pathname);
 
@@ -26,14 +29,18 @@ export default function LayoutWrapper({
       <Navbar />
 
       <div className="flex">
+
         {!shouldHideSidebar && <AppSidebar />}
 
         <main className="flex-1 pt-16 min-h-screen px-4 md:px-8">
           {children}
         </main>
+
       </div>
 
       <Footer />
     </>
   );
+
 }
+// 1
