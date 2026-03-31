@@ -1,6 +1,7 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Sidebar from './_components/Sidebar';
 import Topbar from './_components/Topbar';
 
@@ -64,10 +65,31 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    if (pathname.startsWith('/admin/login')) {
+      setIsAuthorized(true);
+      return;
+    }
+
+    const adminSession = localStorage.getItem("adminSession");
+    if (!adminSession) {
+      router.replace('/admin/login');
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [pathname, router]);
 
   // ✅ Skip layout for login
   if (pathname.startsWith('/admin/login')) {
     return <>{children}</>;
+  }
+
+  // Prevent flash of content before auth check completes
+  if (!isAuthorized) {
+    return null;
   }
 
   const getPageConfig = () => {
