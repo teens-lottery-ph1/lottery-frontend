@@ -20,41 +20,30 @@ const [error,setError] = useState("");
 
 /* ================= LOAD PROFILE ================= */
 
-useEffect(()=>{
+    useEffect(() => {
 
-const loadProfile = async () => {
+        const loadProfile = () => {
+            try {
+                if (typeof window !== "undefined") {
+                    const cached = localStorage.getItem("user");
+                    if (!cached) {
+                        router.push("/login");
+                        return;
+                    }
 
-try {
+                    const user = JSON.parse(cached);
+                    setUsername(user?.name || "");
+                    setEmail(user?.email || "");
+                    setRole(user?.role || "");
+                }
+            } catch (error) {
+                router.push("/login");
+            }
+        };
 
-const res = await fetch(
-`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/profile`,
-{
-credentials:"include"
-}
-);
+        loadProfile();
 
-const data = await res.json();
-
-if(!data.success){
-router.push("/login");
-return;
-}
-
-const user = data.user;
-
-setUsername(user?.name || "");
-setEmail(user?.email || "");
-setRole(user?.role || "");
-
-}catch(error){
-router.push("/login");
-}
-
-};
-
-loadProfile();
-
-},[router]);
+    }, [router]);
 
 
 /* ================= UPDATE PROFILE ================= */
@@ -85,9 +74,20 @@ role
 
 const data = await res.json();
 
-if(data.success){
+        if (data.success) {
 
-setSuccess("Profile updated successfully");
+            if (typeof window !== "undefined") {
+                 const cached = localStorage.getItem("user");
+                 if (cached) {
+                    try {
+                        const parsed = JSON.parse(cached);
+                        localStorage.setItem("user", JSON.stringify({ ...parsed, name: username, email: email, role: role }));
+                        window.dispatchEvent(new Event("authChanged"));
+                    } catch(e) {}
+                 }
+            }
+
+            setSuccess("Profile updated successfully");
 setPassword("");
 setIsEditing(false);
 
