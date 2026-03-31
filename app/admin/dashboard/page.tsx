@@ -24,6 +24,61 @@ export default function DashboardPage() {
   // GET /api/admin/dashboard/stats
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
   const [totalSeconds, setTotalSeconds] = useState(0);
+  
+  // ✅ Revenue states
+  const [revenue, setRevenue] = useState<number>(0);
+  const [loadingRevenue, setLoadingRevenue] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  // ✅ NEW: Total Users state
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+
+  // ✅ Fetch users count
+  const fetchUsersCount = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+      const data = await res.json();
+
+      // adjust based on API response
+      const usersList = data.users || data;
+      setTotalUsers(usersList.length);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+  // ✅ Fetch revenue
+  const fetchRevenue = async () => {
+    setIsUpdating(true);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/revenue`);
+      const data = await res.json();
+
+      if (data.success) {
+        setRevenue(data.revenue);
+      }
+    } catch (error) {
+      console.error('Error fetching revenue:', error);
+    } finally {
+      setLoadingRevenue(false);
+
+      setTimeout(() => {
+        setIsUpdating(false);
+      }, 300);
+    }
+  };
+
+  // ✅ Auto refresh every 10 seconds
+  useEffect(() => {
+    fetchRevenue();
+    fetchUsersCount();
+
+    const interval = setInterval(() => {
+      fetchRevenue();
+      fetchUsersCount();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Countdown timer
   useEffect(() => {
@@ -68,19 +123,23 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* SECTION 1: Stat Cards */}
       <div className="grid grid-cols-4 gap-6">
-        <StatCard
+         <StatCard
           icon="👥"
-          value="0"
+          value={totalUsers.toString()}
           label="Total Users"
-          change="0%"
+          change="Live"
           changeType="up"
           accentColor="#1e40af"
         />
-        <StatCard
+         <StatCard
           icon="💰"
-          value="₹0"
+          value={
+            loadingRevenue
+              ? 'Loading...'
+              : `₹${formatINR(revenue)}`
+          }
           label="Total Revenue"
-          change="0%"
+          change={isUpdating ? 'Updating...' : 'Live'}
           changeType="up"
           accentColor="#16a34a"
         />
