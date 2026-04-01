@@ -12,7 +12,9 @@ import {
   TrendingUp,
   CreditCard,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Copy,
+  Sparkles
 } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -68,7 +70,9 @@ const transactions = [
     status: "pending",
     type: "debit",
   },
-];function WalletContent() {
+];
+
+function WalletContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const amount = searchParams.get("amount");
@@ -77,7 +81,13 @@ const transactions = [
 
   const [wallet, setWallet] = useState({ available: 0, locked: 0 });
   const [isPaying, setIsPaying] = useState(false);
-  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
+
+  // ✅ Referral Logic Added
+  const [referralId, setReferralId] = useState("");
+  const [referralLink, setReferralLink] = useState("");
+
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -94,13 +104,35 @@ const transactions = [
     fetchWallet();
   }, [BASE_URL]);
 
+  // ✅ Generate Referral
+  const generateReferral = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/referral/generate`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      setReferralId(data.referralId);
+
+      const link = `${window.location.origin}/signup?ref=${data.referralId}`;
+      setReferralLink(link);
+    } catch (err) {
+      alert("Failed to generate referral");
+    }
+  };
+
+  const copyReferral = () => {
+    navigator.clipboard.writeText(referralLink);
+    alert("Copied!");
+  };
+
   const handlePay = async () => {
     setIsPaying(true);
     try {
-      // 1. Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // 2. Call the ACTUAL join API if we have a poolId
       if (poolId) {
         const res = await fetch(`${BASE_URL}/api/levels/join`, {
           method: "POST",
@@ -246,6 +278,53 @@ const transactions = [
             <p className="text-sm text-gray-400 mt-1">{item.desc}</p>
           </div>
         ))}
+      </div>
+
+      {/* REFERRAL SECTION ADDED */}
+      <div className="mt-10 bg-[#0f1613] rounded-2xl border border-[#1f2a26] p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="text-emerald-400" />
+          <h2 className="text-lg font-semibold">Referral</h2>
+        </div>
+
+        {!referralId && (
+          <button
+            onClick={generateReferral}
+            className="flex items-center gap-2 bg-yellow-500 text-black px-5 py-3 rounded-xl cursor-pointer hover:bg-yellow-600 transition-colors"
+          >
+            <Sparkles size={16} />
+            Generate Referral ID
+          </button>
+        )}
+
+        {referralId && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-gray-400 text-sm">Referral ID</p>
+              <p className="text-yellow-400 font-semibold">{referralId}</p>
+            </div>
+
+            <div>
+              <p className="text-gray-400 text-sm">Referral Link</p>
+
+              <div className="flex gap-3 mt-2">
+                <input
+                  value={referralLink}
+                  readOnly
+                  className="flex-1 bg-[#0b1511] border border-[#1f2a26] rounded-xl px-4 py-2"
+                />
+
+                <button
+                  onClick={copyReferral}
+                  className="bg-emerald-500 text-black px-4 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-emerald-600 transition-colors"
+                >
+                  <Copy size={14} />
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* TRANSACTIONS */}
