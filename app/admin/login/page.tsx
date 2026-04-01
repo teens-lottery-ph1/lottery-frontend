@@ -34,6 +34,7 @@ export default function Page() {
       const data = await res.json();
 
       if (data.success) {
+        localStorage.setItem("adminSession", "active");
         router.replace("/admin/dashboard");
       } else {
         setError(data.message || "Invalid credentials");
