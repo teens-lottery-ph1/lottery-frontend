@@ -1,4 +1,4 @@
-// "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import StatCard from "../_components/StatCard";
@@ -16,7 +16,6 @@ export default function UsersPage() {
   const [levelFilter, setLevelFilter] = useState("All");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // ✅ NEW: fetch users count
   useEffect(() => {
     const fetchUsers = async () => {
       const res = await fetch(
@@ -165,20 +164,7 @@ export default function UsersPage() {
 
           </div>
 
-          {/* Right: Action Buttons */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExportCSV}
-              className="bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-4 py-2.5 rounded-xl hover:border-[rgba(255,255,255,0.15)] hover:text-[#111827] transition-colors text-[13px] font-medium"
-            >
-              📥 Export CSV
-            </button>
-            <button className="bg-[#f5c518] text-black font-bold px-6 py-2.5 rounded-xl hover:bg-[#e6a800] transition-colors text-[13px]">
-              ➕ Add User
-            </button>
-          </div>
         </div>
-      </div>
 
       </div>
 
@@ -300,64 +286,8 @@ export default function UsersPage() {
 
         </table>
 
-        {/* PAGINATION */}
-        <div className="flex items-center justify-between mt-6 pt-6 border-t border-[#e5e7eb]">
-          <p className="text-[13px] text-[#4b5563]">
-            Showing {startIdx + 1}–
-            {Math.min(startIdx + itemsPerPage, filteredUsers.length)} of{' '}
-            {filteredUsers.length} users
-          </p>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border border-[#e5e7eb] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors disabled:opacity-50"
-            >
-              ←
-            </button>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`px-3 py-1 rounded-lg text-[13px] font-medium transition-colors ${
-                    currentPage === pageNum
-                      ? 'bg-[#f5c518] text-black'
-                      : 'border border-[#e5e7eb] text-[#4b5563] hover:border-[rgba(255,255,255,0.15)]'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
-            {totalPages > 5 && (
-              <>
-                <span className="text-[#6b7280]">...</span>
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  className="px-3 py-1 border border-[#e5e7eb] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors text-[#4b5563]"
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() =>
-                setCurrentPage(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-[#e5e7eb] rounded-lg text-[13px] hover:border-[rgba(255,255,255,0.15)] transition-colors disabled:opacity-50"
-            >
-              →
-            </button>
-          </div>
-        </div>
       </div>
+
     </div>
   );
 }
