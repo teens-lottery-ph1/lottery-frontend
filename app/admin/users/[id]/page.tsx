@@ -2,24 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Avatar from "../../_components/Avatar";
+import Badge from "../../_components/Badge";
 
-type User = {
+// Types
+interface User {
+  id: number;
   name: string;
   email: string;
   phone: string;
-};
+}
 
-type Wallet = {
+interface Wallet {
   balance: number;
   bonusBalance: number;
-};
+}
 
-type Transaction = {
-  id: string;
+interface Transaction {
+  id: number;
   amount: number;
   type: string;
   status: string;
-};
+}
 
 export default function UserDetailPage() {
   const params = useParams();
@@ -29,178 +33,178 @@ export default function UserDetailPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${params.id}`
-    )
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${params.id}`)
       .then((res) => res.json())
       .then((data) => {
         setUser(data.data.user);
         setWallet(data.data.wallet);
         setTransactions(data.data.transactions);
       });
-  }, []);
+  }, [params.id]);
 
   return (
-    <div className="p-6">
+    <div className="space-y-8">
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
+      <div>
+        <h1 className="text-[22px] font-semibold text-[#111827]">
           User Details
         </h1>
-        <p className="text-sm text-gray-500">
-          View user profile and wallet information
+        <p className="text-[13px] text-[#6b7280]">
+          View user profile and activity
         </p>
       </div>
 
-      {/* Top Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      {/* USER CARD */}
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
 
-        {/* User */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <p className="text-sm text-gray-500">
-            User Name
-          </p>
+        <div className="flex items-center gap-4 mb-6">
 
-          <p className="text-lg font-semibold text-gray-800 mt-2">
-            {user?.name || "-"}
-          </p>
+          <Avatar name={user?.name || ""} size="md" />
+
+          <div>
+            <h3 className="text-[16px] font-semibold text-[#111827]">
+              {user?.name}
+            </h3>
+            <p className="text-[12px] text-[#6b7280]">
+              ID #{user?.id}
+            </p>
+          </div>
+
         </div>
 
-        {/* Balance */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <p className="text-sm text-gray-500">
+        <div className="grid grid-cols-3 gap-6">
+
+          <div>
+            <p className="text-[12px] text-[#6b7280]">
+              Email
+            </p>
+            <p className="text-[14px] font-semibold text-[#111827]">
+              {user?.email}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[12px] text-[#6b7280]">
+              Phone
+            </p>
+            <p className="text-[14px] font-semibold text-[#111827]">
+              {user?.phone}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[12px] text-[#6b7280]">
+              Status
+            </p>
+            <Badge label="Active" variant="green" />
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* WALLET */}
+      <div className="grid grid-cols-2 gap-6">
+
+        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
+
+          <p className="text-[12px] text-[#6b7280] mb-2">
             Wallet Balance
           </p>
 
-          <p className="text-xl font-semibold text-green-600 mt-2">
-            ₹{wallet?.balance ?? 0}
-          </p>
+          <h3 className="text-[24px] font-bold text-[#00d68f]">
+            ₹{wallet?.balance || 0}
+          </h3>
+
         </div>
 
-        {/* Bonus */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <p className="text-sm text-gray-500">
+        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
+
+          <p className="text-[12px] text-[#6b7280] mb-2">
             Bonus Balance
           </p>
 
-          <p className="text-xl font-semibold text-yellow-600 mt-2">
-            ₹{wallet?.bonusBalance ?? 0}
-          </p>
-        </div>
-
-      </div>
-
-
-      {/* Personal Info */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-
-        <h2 className="font-semibold text-gray-800 mb-4">
-          Personal Information
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Name
-            </p>
-            <p className="font-medium text-gray-800 mt-1">
-              {user?.name || "-"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Email
-            </p>
-            <p className="font-medium text-gray-800 mt-1">
-              {user?.email || "-"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-500">
-              Phone
-            </p>
-            <p className="font-medium text-gray-800 mt-1">
-              {user?.phone || "-"}
-            </p>
-          </div>
+          <h3 className="text-[24px] font-bold text-[#3d9eff]">
+            ₹{wallet?.bonusBalance || 0}
+          </h3>
 
         </div>
 
       </div>
 
+      {/* TRANSACTIONS */}
+      <div className="bg-white border border-[#e5e7eb] rounded-2xl">
 
-      {/* Transactions */}
-      <div className="bg-white rounded-2xl border border-gray-200">
+        <div className="p-6 border-b border-[#e5e7eb]">
 
-        <div className="p-5 border-b bg-gray-50">
-          <h2 className="font-semibold text-gray-800">
+          <h2 className="text-[16px] font-semibold text-[#111827]">
             Transactions
           </h2>
+
         </div>
 
         <div className="overflow-x-auto">
 
-          <table className="w-full">
+          <table className="w-full text-[13px]">
 
             <thead>
-              <tr className="text-left text-gray-500 text-sm border-b bg-gray-50">
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Status</th>
+
+              <tr className="border-b border-[#e5e7eb]">
+
+                <th className="py-4 px-6 text-left text-[11px] font-semibold text-[#6b7280] uppercase">
+                  Amount
+                </th>
+
+                <th className="py-4 px-6 text-left text-[11px] font-semibold text-[#6b7280] uppercase">
+                  Type
+                </th>
+
+                <th className="py-4 px-6 text-left text-[11px] font-semibold text-[#6b7280] uppercase">
+                  Status
+                </th>
+
               </tr>
+
             </thead>
 
             <tbody>
 
-              {transactions.length > 0 ? (
-                transactions.map((txn) => (
-                  <tr
-                    key={txn.id}
-                    className="border-b hover:bg-gray-50 transition"
-                  >
-                    <td className="px-6 py-4 font-medium">
-                      ₹{txn.amount}
-                    </td>
+              {transactions?.map((txn) => (
 
-                    <td className="px-6 py-4 capitalize">
-                      {txn.type}
-                    </td>
+                <tr
+                  key={txn.id}
+                  className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
+                >
 
-                    <td className="px-6 py-4">
-
-                      <span
-                        className={`px-3 py-1 rounded-xl text-xs font-medium
-                        ${
-                          txn.status === "success"
-                            ? "bg-green-100 text-green-700"
-                            : txn.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {txn.status}
-                      </span>
-
-                    </td>
-
-                  </tr>
-                ))
-              ) : (
-
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="text-center py-10 text-gray-500"
-                  >
-                    No Transactions Found
+                  <td className="py-4 px-6 font-semibold text-[#111827]">
+                    ₹{txn.amount}
                   </td>
+
+                  <td className="py-4 px-6 text-[#4b5563]">
+                    {txn.type}
+                  </td>
+
+                  <td className="py-4 px-6">
+
+                    <span
+                      className={`px-3 py-1 rounded-full text-[11px] font-medium
+                      ${
+                        txn.status === "success" || txn.status === "Success"
+                          ? "bg-green-100 text-green-600"
+                          : txn.status === "pending"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-red-100 text-red-600"
+                      }`}
+                    >
+                      {txn.status}
+                    </span>
+
+                  </td>
+
                 </tr>
 
-              )}
+              ))}
 
             </tbody>
 
