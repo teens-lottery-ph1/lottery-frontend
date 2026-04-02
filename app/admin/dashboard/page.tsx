@@ -8,6 +8,7 @@ import Avatar from '../_components/Avatar';
 // Format currency to Indian format
 const formatINR = (value: number) => {
   return value.toLocaleString('en-IN');
+  
 };
 
 export default function DashboardPage() {
