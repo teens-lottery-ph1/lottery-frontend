@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [phone,setPhone] = useState("");
+  const [referralCode,setReferralCode] = useState("");
 
   const [loading,setLoading] = useState(false);
   const [error,setError] = useState("");
@@ -39,6 +40,7 @@ export default function SignupPage() {
           email,
           password,
           phone,
+          referralCode,
           level_id: 1,
           country_id: 1
         })
@@ -127,6 +129,14 @@ export default function SignupPage() {
           className="w-full p-2 rounded bg-zinc-800 text-white"
           value={password}
           onChange={(e)=>setPassword(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="Referral Code (Optional)"
+          className="w-full p-2 rounded bg-zinc-800 text-white"
+          value={referralCode}
+          onChange={(e)=>setReferralCode(e.target.value)}
         />
 
         <button
