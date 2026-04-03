@@ -402,4 +402,6 @@ export default function WalletPage() {
       <Suspense fallback={<p className="text-gray-500">Loading wallet...</p>}>
         <WalletContent />
       </Suspense>
-    <
+    </div>
+  );
+}
