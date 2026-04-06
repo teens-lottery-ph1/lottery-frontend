@@ -125,7 +125,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-4 gap-6">
          <StatCard
           icon="👥"
-          value={totalUsers.toString()}
+          value={totalUsers?.toString()}
           label="Total Users"
           change="Live"
           changeType="up"
