@@ -1,22 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import { walletData } from '../_components/mock-data';
+import { useEffect, useState } from 'react';
 import StatCard from '../_components/StatCard';
-import Badge from '../_components/Badge';
 import Avatar from '../_components/Avatar';
 
-// Format currency to Indian format
+// ✅ BACKEND URL
+const BASE_URL = 'http://localhost:10000/api/admin/wallets';
+
 const formatINR = (value: number) => {
   return value.toLocaleString('en-IN');
 };
 
 export default function WalletPage() {
-  // API CALL: Backend endpoint to fetch wallet data
-  // GET /api/admin/wallet/users
+  const [walletData, setWalletData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [avgBalance, setAvgBalance] = useState(0);
+  const [txnToday, setTxnToday] = useState(0);
+  const [lockedPrizes, setLockedPrizes] = useState(0);
+
   const [adjustmentOpen, setAdjustmentOpen] = useState(false);
-  const [selectedUserWallet, setSelectedUserWallet] =
-    useState<(typeof walletData)[0] | null>(null);
+  const [selectedUserWallet, setSelectedUserWallet] = useState<any>(null);
+
   const [adjustmentForm, setAdjustmentForm] = useState({
     amount: '',
     type: 'Add',
@@ -24,12 +30,38 @@ export default function WalletPage() {
     note: '',
   });
 
-  const totalBalance = 0;
-  const avgBalance = 0;
-  const txnToday = 0;
-  const lockedPrizes = 0;
+  // ✅ FETCH DATA
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
 
-  const handleOpenAdjustment = (user: (typeof walletData)[0]) => {
+  const fetchWalletData = async () => {
+    try {
+      const res = await fetch(BASE_URL);
+
+      if (!res.ok) throw new Error('Failed to fetch wallets');
+
+      const data = await res.json();
+
+      console.log('API DATA:', data);
+
+      // ✅ TABLE DATA
+      setWalletData(data.wallets || []);
+
+      // ✅ STATS
+      setTotalBalance(data.totalBalance || 0);
+      setAvgBalance(data.averageBalance || 0);
+      setTxnToday(data.transactionsToday || 0);
+      setLockedPrizes(data.lockedPrizes || 0);
+    } catch (err: any) {
+      console.error('Fetch Error:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ OPEN PANEL
+  const handleOpenAdjustment = (user: any) => {
     setSelectedUserWallet(user);
     setAdjustmentOpen(true);
   };
@@ -37,27 +69,21 @@ export default function WalletPage() {
   const handleCloseAdjustment = () => {
     setAdjustmentOpen(false);
     setSelectedUserWallet(null);
-    setAdjustmentForm({
-      amount: '',
-      type: 'Add',
-      reason: 'Bonus Award',
-      note: '',
-    });
   };
 
+  // ✅ SUBMIT (API READY)
   const handleSubmitAdjustment = () => {
-    // API CALL: Backend endpoint to apply wallet adjustment
-    // POST /api/admin/wallet/adjust with adjustmentForm
-    console.log('Adjustment submitted:', {
-      userId: selectedUserWallet?.userId,
+    console.log('Adjustment:', {
+      userId: selectedUserWallet?.id,
       ...adjustmentForm,
     });
+
     handleCloseAdjustment();
   };
 
   return (
     <div className="space-y-8">
-      {/* STAT CARDS */}
+      {/* ✅ STAT CARDS */}
       <div className="grid grid-cols-4 gap-6">
         <StatCard
           icon="👛"
@@ -85,75 +111,64 @@ export default function WalletPage() {
         />
       </div>
 
-      {/* WALLET TABLE + ADJUSTMENT PANEL */}
+      {/* ✅ TABLE + PANEL */}
       <div className="grid grid-cols-[1fr_350px] gap-6">
-        {/* WALLET TABLE */}
-        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
-          <h3 className="text-[18px] font-bold text-[#111827] mb-6">
+        {/* ✅ TABLE */}
+        <div className="bg-white border rounded-2xl p-6">
+          <h3 className="text-[18px] font-bold mb-6">
             User Wallets
           </h3>
 
-          <div className="overflow-x-auto">
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="border-b border-[#e5e7eb]">
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Balance
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Bonus
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Locked
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Last Txn
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Actions
-                  </th>
+                <tr className="border-b">
+                  <th>User</th>
+                  <th>Balance</th>
+                  <th>Bonus</th>
+                  <th>Locked</th>
+                  <th>Last Txn</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {walletData.map((user) => (
-                  <tr
-                    key={user.userId}
-                    className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <Avatar name={user.userName} size="sm" />
-                        <p className="text-[#111827] font-semibold">
-                          {user.userName}
-                        </p>
-                      </div>
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 flex items-center gap-2">
+                      <Avatar name={user.userName || 'User'} size="sm" />
+                      {user.userName}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-[#00d68f]">
-                      ₹{formatINR(user.balance)}
+
+                    <td className="text-green-600 font-semibold">
+                      ₹{formatINR(Number(user.balance || 0))}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-[#f5c518]">
-                      ₹{formatINR(user.bonus)}
+
+                    <td className="text-yellow-500 font-semibold">
+                      ₹{formatINR(Number(user.bonus || 0))}
                     </td>
-                    <td className="py-3 px-4 text-[#ff4d6d]">
-                      ₹{formatINR(user.locked)}
+
+                    <td className="text-red-500">
+                      ₹{formatINR(Number(user.locked || 0))}
                     </td>
-                    <td className="py-3 px-4 text-[#4b5563]">
-                      {user.lastTxn}
+
+                    <td>
+                      {user.lastTxn || '—'}
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
+
+                    <td>
+                      <div className="flex gap-2">
                         <button
                           onClick={() => handleOpenAdjustment(user)}
-                          className="bg-[rgba(0,214,143,0.12)] text-[#00d68f] border border-[rgba(0,214,143,0.2)] px-2 py-1 rounded-lg hover:bg-[rgba(0,214,143,0.2)] text-[11px] font-semibold transition-colors"
+                          className="bg-green-100 text-green-600 px-2 py-1 rounded"
                         >
                           ➕
                         </button>
                         <button
                           onClick={() => handleOpenAdjustment(user)}
-                          className="bg-[rgba(255,77,109,0.12)] text-[#ff4d6d] border border-[rgba(255,77,109,0.2)] px-2 py-1 rounded-lg hover:bg-[rgba(255,77,109,0.2)] text-[11px] font-semibold transition-colors"
+                          className="bg-red-100 text-red-600 px-2 py-1 rounded"
                         >
                           ➖
                         </button>
@@ -163,137 +178,89 @@ export default function WalletPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          )}
         </div>
 
-        {/* MANUAL ADJUSTMENT PANEL */}
+        {/* ✅ ADJUSTMENT PANEL */}
         {adjustmentOpen && selectedUserWallet && (
-          <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 h-fit sticky top-20">
-            <h3 className="text-[16px] font-bold text-[#111827] mb-4">
-              Manual Adjustment
-            </h3>
+          <div className="bg-white border rounded-2xl p-6">
+            <h3 className="font-bold mb-4">Manual Adjustment</h3>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  User
-                </label>
-                <p className="bg-[#f3f4f6] rounded-lg px-3 py-2 text-[#111827]">
-                  {selectedUserWallet.userName}
-                </p>
-              </div>
+              <p className="bg-gray-100 p-2 rounded">
+                {selectedUserWallet.userName}
+              </p>
 
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  value={adjustmentForm.amount}
-                  onChange={(e) =>
-                    setAdjustmentForm((prev) => ({
-                      ...prev,
-                      amount: e.target.value,
-                    }))
+              <input
+                type="number"
+                placeholder="Amount"
+                value={adjustmentForm.amount}
+                onChange={(e) =>
+                  setAdjustmentForm({
+                    ...adjustmentForm,
+                    amount: e.target.value,
+                  })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    setAdjustmentForm({ ...adjustmentForm, type: 'Add' })
                   }
-                  placeholder="0"
-                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Type
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      setAdjustmentForm((prev) => ({
-                        ...prev,
-                        type: 'Add',
-                      }))
-                    }
-                    className={`flex-1 py-2 rounded-lg text-[12px] font-semibold transition-colors ${
-                      adjustmentForm.type === 'Add'
-                        ? 'bg-[#f5c518] text-black'
-                        : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563]'
-                    }`}
-                  >
-                    Add Funds
-                  </button>
-                  <button
-                    onClick={() =>
-                      setAdjustmentForm((prev) => ({
-                        ...prev,
-                        type: 'Deduct',
-                      }))
-                    }
-                    className={`flex-1 py-2 rounded-lg text-[12px] font-semibold transition-colors ${
-                      adjustmentForm.type === 'Deduct'
-                        ? 'bg-[#f5c518] text-black'
-                        : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563]'
-                    }`}
-                  >
-                    Deduct
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Reason
-                </label>
-                <select
-                  value={adjustmentForm.reason}
-                  onChange={(e) =>
-                    setAdjustmentForm((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#4b5563] text-[13px] outline-none focus:border-[#d97706] transition-colors"
+                  className="flex-1 bg-yellow-400 p-2 rounded"
                 >
-                  <option>Bonus Award</option>
-                  <option>Contest Winner</option>
-                  <option>Refund</option>
-                  <option>Correction</option>
-                  <option>Penalty</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Note
-                </label>
-                <textarea
-                  value={adjustmentForm.note}
-                  onChange={(e) =>
-                    setAdjustmentForm((prev) => ({
-                      ...prev,
-                      note: e.target.value,
-                    }))
+                  Add
+                </button>
+                <button
+                  onClick={() =>
+                    setAdjustmentForm({ ...adjustmentForm, type: 'Deduct' })
                   }
-                  placeholder="Admin note..."
-                  rows={3}
-                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280] resize-none"
-                />
+                  className="flex-1 border p-2 rounded"
+                >
+                  Deduct
+                </button>
               </div>
 
-              <div className="bg-[rgba(255,77,109,0.12)] border border-[rgba(255,77,109,0.2)] rounded-lg p-3 text-[12px] text-[#ff4d6d]">
-                ⚠️ This action will be logged in the audit trail
-              </div>
+              <select
+                value={adjustmentForm.reason}
+                onChange={(e) =>
+                  setAdjustmentForm({
+                    ...adjustmentForm,
+                    reason: e.target.value,
+                  })
+                }
+                className="w-full border p-2 rounded"
+              >
+                <option>Bonus Award</option>
+                <option>Refund</option>
+                <option>Penalty</option>
+              </select>
+
+              <textarea
+                placeholder="Note"
+                value={adjustmentForm.note}
+                onChange={(e) =>
+                  setAdjustmentForm({
+                    ...adjustmentForm,
+                    note: e.target.value,
+                  })
+                }
+                className="w-full border p-2 rounded"
+              />
 
               <div className="flex gap-2">
                 <button
                   onClick={handleSubmitAdjustment}
-                  className="flex-1 bg-[#f5c518] text-black font-bold px-3 py-2 rounded-lg hover:bg-[#e6a800] transition-colors text-[13px]"
+                  className="flex-1 bg-yellow-400 p-2 rounded font-bold"
                 >
                   Apply 💰
                 </button>
+
                 <button
                   onClick={handleCloseAdjustment}
-                  className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[13px]"
+                  className="flex-1 border p-2 rounded"
                 >
                   Cancel
                 </button>
