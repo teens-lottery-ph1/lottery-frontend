@@ -88,6 +88,20 @@ function WalletContent() {
 
   const BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
+  const [addAmount, setAddAmount] = useState("");
+  const [isProcessingAdd, setIsProcessingAdd] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
+
+  // Load Razorpay script dynamically
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -154,6 +168,122 @@ function WalletContent() {
     }
   };
 
+  const handleAddMoney = async () => {
+    const amountVal = Number(addAmount);
+    if (!amountVal || amountVal < 50) {
+      alert("Minimum amount to add is ₹50");
+      return;
+    }
+
+    setIsProcessingAdd(true);
+    try {
+      // [OPTIONAL]: Extract token from cookie (Commented out for hardcoding)
+      // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+
+      const orderRes = await fetch(`${BASE_URL}/api/payments/create-order`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          // "Authorization": `Bearer ${token}` 
+        },
+        // credentials: "include", 
+        body: JSON.stringify({ 
+          amount: amountVal, 
+          userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0", 
+          walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9" 
+        }),
+      });
+      const orderData = await orderRes.json();
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Lottery Wallet",
+        description: "Add Money to Wallet",
+        order_id: orderData.id,
+        handler: async (response: any) => {
+          try {
+            // [OPTIONAL]: Again, send auth token inside headers (Commented out for hardcoding)
+            // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+
+            const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                // "Authorization": `Bearer ${token}` 
+              },
+              // credentials: "include",
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0",
+                amount: amountVal,
+                walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9",
+                type: "Deposit"
+              }),
+            });
+            if (!verifyRes.ok) {
+              const errData = await verifyRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Server Error during verification`);
+            }
+
+            // NOTE: Wallet update is handled asynchronously by the Razorpay webhook.
+            // We poll GET /api/wallet every 2-3 seconds until the balance increases 
+            // instead of blindly updating the local state.
+            setIsAddMoneyOpen(false);
+            setIsPolling(true);
+
+            const initialBalance = wallet.available;
+            let currentBalance = initialBalance;
+            let attempts = 0;
+            const maxAttempts = 10; // Max ~25 seconds
+
+            while (currentBalance <= initialBalance && attempts < maxAttempts) {
+              await new Promise(r => setTimeout(r, 2500)); // Poll every 2.5 seconds
+              try {
+                const walletRes = await fetch(`${BASE_URL}/api/wallet`);
+                const data = await walletRes.json();
+                if (data && !data.error) {
+                  currentBalance = data.available;
+                  if (currentBalance > initialBalance) {
+                    setWallet(data); // Sync state seamlessly
+                    break;
+                  }
+                }
+              } catch (e) {
+                // Network glitch, silently ignore and let loop retry
+              }
+              attempts++;
+            }
+
+            setIsPolling(false);
+            if (currentBalance > initialBalance) {
+              // Success exactly when webhook updates DB
+              alert(`Money added successfully! New Balance: ₹${currentBalance}`);
+            } else {
+              // Timeout fallback
+              alert("Payment verified, but wallet update is taking a bit longer. Please check back in a few minutes.");
+            }
+            
+            setAddAmount("");
+          } catch (err: any) {
+            console.error("Network Error during Verification:", err);
+            alert(`Verification failed: ${err.message || 'Could not verify payment.'}`);
+          }
+        },
+        theme: { color: "#10b981" },
+      };
+      new (window as any).Razorpay(options).open();
+    } catch (e: any) {
+      console.error(e);
+      alert("Failed to initiate payment");
+    } finally {
+      setIsProcessingAdd(false);
+    }
+  };
+
   return (
     <>
       {/* PAYMENT ALERT IF REDIRECTED */}
@@ -211,7 +341,10 @@ function WalletContent() {
             </h1>
 
             <div className="flex gap-3 mt-6">
-              <button className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-5 py-2 rounded-xl">
+              <button 
+                onClick={() => setIsAddMoneyOpen(true)}
+                className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-5 py-2 rounded-xl"
+              >
                 <Plus size={18} /> Add Funds
               </button>
 
@@ -384,6 +517,55 @@ function WalletContent() {
           ))}
         </div>
       </div>
+
+      {/* POLLING OVERLAY */}
+      {isPolling && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0f1613] border border-[#1f2a26] rounded-2xl p-8 flex flex-col items-center shadow-2xl w-full max-w-sm text-center">
+            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-5" />
+            <h2 className="text-xl font-bold text-white mb-2">Processing Payment...</h2>
+            <p className="text-gray-400 text-sm">
+              Please wait while the transaction successfully synchronizes securely.<br />
+              This usually takes just a few seconds...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ADD MONEY MODAL */}
+      {isAddMoneyOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0f1613] border border-[#1f2a26] rounded-2xl w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setIsAddMoneyOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-bold mb-4">Add Money to Wallet</h2>
+            <div className="mb-6">
+              <label className="block text-sm text-gray-400 mb-2">Amount (Min ₹50)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                <input 
+                  type="number"
+                  value={addAmount}
+                  onChange={(e) => setAddAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full bg-[#1c2b26] border border-[#2a403a] rounded-xl py-3 pl-8 pr-4 text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+            <button 
+              onClick={handleAddMoney}
+              disabled={isProcessingAdd || !addAmount || Number(addAmount) < 50}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 text-black font-bold py-3 rounded-xl transition-all"
+            >
+              {isProcessingAdd ? "Processing..." : "Proceed to Pay"}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

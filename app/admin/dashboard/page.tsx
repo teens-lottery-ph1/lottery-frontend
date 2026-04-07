@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
         <StatCard
           icon="👥"
-          value={users.length.toString()}
+          value={totalUsers?.toString()}
           label="Total Users"
           change="Live"
           changeType="up"

@@ -52,10 +52,10 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
           if (res.ok) {
             const data = await res.json();
             let parsedNumbers: number[] = [];
-            
+
             // Accommodate array responses or object responses { bookedNumbers: [...] }
             const rawArray = Array.isArray(data) ? data : (data.bookedNumbers || data.data || data.tickets || []);
-            
+
             if (Array.isArray(rawArray)) {
               rawArray.forEach((item: any) => {
                 if (typeof item === 'number') {
@@ -97,7 +97,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
       prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num]
     );
   };
-  
+
   // Pagination logic (50 per page)
   const startNum = (currentPage - 1) * 50 + 1;
   const visibleNumbers = Array.from({ length: 50 }, (_, i) => startNum + i);
@@ -108,10 +108,21 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     setIsProcessing(true);
     console.log("PAYMENT INITIALIZED:", { totalAmount, selectedNumbers, gameCredits: game.credits }); // DEBUG LOG
     try {
+      // [OPTIONAL]: Extract token from cookie (Commented out for hardcoding)
+      // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+
       const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/create-order`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: totalAmount, userId: "872affae-8481-4fc1-a07e-5499ea394652", walletId: "4d2f754a-eaeb-4938-9248-15a47eb17de7" }),
+        headers: { 
+          "Content-Type": "application/json",
+          // "Authorization": `Bearer ${token}` 
+        },
+        // credentials: "include", 
+        body: JSON.stringify({ 
+          amount: totalAmount, 
+          userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0", 
+          walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9" 
+        }),
       });
       const orderData = await orderRes.json();
 
@@ -124,29 +135,34 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
         order_id: orderData.id,
         handler: async (response: any) => {
           try {
-            // Submit verification sequentially for EACH selected box. 
-            // This guarantees the backend individually records each box correctly, 
-            // even if the backend endpoint is only reading the first ticketNumber.
-            for (const num of selectedNumbers) {
-              const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  drawId: game.id,
-                  ticketNumber: num.toString(),
-                  pickedNumbers: num.toString(),
-                  userId: "872affae-8481-4fc1-a07e-5499ea394652",
-                  amount: totalAmount / selectedNumbers.length,
-                  walletId: "4d2f754a-eaeb-4938-9248-15a47eb17de7"
-                }),
-              });
-              if (!verifyRes.ok) {
-                const errData = await verifyRes.json().catch(() => ({}));
-                throw new Error(errData.error || `Server Error for ticket ${num}`);
-              }
+            // Verify payment ONLY ONCE for all selected numbers.
+            // NOTE: Wallet update is handled asynchronously by the Razorpay webhook.
+            // Do NOT update wallet manually here.
+            // [OPTIONAL]: Again, send auth token inside headers (Commented out for hardcoding)
+            // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                // "Authorization": `Bearer ${token}` 
+              },
+              // credentials: "include",
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                drawId: game.id,
+                ticketNumber: selectedNumbers.join(","),
+                pickedNumbers: selectedNumbers.join(","),
+                userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0",
+                amount: totalAmount,
+                walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9"
+              }),
+            });
+            if (!verifyRes.ok) {
+              const errData = await verifyRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Server Error during verification`);
             }
             alert("Success! Your tickets are booked.");
             onClose();
@@ -301,10 +317,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                             disabled={isProcessing || isBooked}
                             className={`
                               relative h-12 rounded-xl flex items-center justify-center text-sm font-black transition-all duration-300
-                              ${
-                                isBooked
-                                  ? "bg-red-500/10 border border-red-500/20 text-red-500/50 cursor-not-allowed" // Disabled booked styling
-                                  : isSelected
+                              ${isBooked
+                                ? "bg-red-500/10 border border-red-500/20 text-red-500/50 cursor-not-allowed" // Disabled booked styling
+                                : isSelected
                                   ? "bg-[#00FFA3] text-black shadow-[0_0_25px_rgba(0,255,163,0.5)] border-[#00FFA3]"
                                   : "bg-white/5 border border-white/10 text-white/40 hover:border-[#00FFA3]/50 hover:text-white"
                               }

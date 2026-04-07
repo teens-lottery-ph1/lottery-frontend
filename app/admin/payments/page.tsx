@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // Added useEffect import
-import { transactions } from '../_components/mock-data';
+import { useState, useEffect } from 'react';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
 import Avatar from '../_components/Avatar';
@@ -29,6 +28,42 @@ export default function PaymentsPage() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  // NEW: State for real API transactions
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // NEW: Fetch transactions on mount
+  // Calling GET /api/admin/payments/transactions to fetch real data
+  // We keep the client-side filters acting exactly the same to avoid UI refactor
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // [OPTIONAL]: Extract admin_token from cookies (Commented out for hardcoding/public access)
+        // const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/transactions`, {
+          // headers: {
+          //   "Authorization": `Bearer ${adminToken}`
+          // },
+          // credentials: "include"
+        });
+        if (!res.ok) throw new Error('Failed to fetch transactions');
+        const data = await res.json();
+        // Assuming API returns an array or an object with data property
+        const txnsArray = Array.isArray(data) ? data : (data.data || []);
+        setTransactions(txnsArray);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
+
   const filteredTransactions = transactions.filter((txn) => {
     const txnDate = new Date(txn.datetime);
     const from = new Date(fromDate);
@@ -43,7 +78,7 @@ export default function PaymentsPage() {
   });
 
   // Added state for payment stats
-  const [totalRevenue, setTotalRevenue] = useState(0); 
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalDeposits, setTotalDeposits] = useState(0);
   const [totalWithdrawals, setTotalWithdrawals] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
@@ -52,7 +87,15 @@ export default function PaymentsPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`); // API call to fetch stats using env var
+        // [OPTIONAL]: Extract admin_token from cookies (Commented out for hardcoding/public access)
+        // const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`, {
+          // headers: {
+          //   "Authorization": `Bearer ${adminToken}`
+          // },
+          // credentials: "include"
+        }); // API call to fetch stats using env var
         if (res.ok) {
           const data = await res.json();
           setTotalRevenue(Number(data.totalRevenue) || 0); // Update total revenue
@@ -66,6 +109,7 @@ export default function PaymentsPage() {
     };
     fetchStats();
   }, []);
+
 
   // CSV Export
   const handleExportCSV = () => {
@@ -239,7 +283,31 @@ export default function PaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredTransactions.slice(0, 15).map((txn) => (
+              {isLoading && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-[#6b7280]">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading transactions...</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {error && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-[#ff4d6d]">
+                    Failed to load transactions: {error}
+                  </td>
+                </tr>
+              )}
+              {!isLoading && !error && filteredTransactions.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-[#6b7280]">
+                    No transactions found.
+                  </td>
+                </tr>
+              )}
+              {!isLoading && !error && filteredTransactions.slice(0, 15).map((txn) => (
                 <tr
                   key={txn.id}
                   className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
