@@ -13,7 +13,8 @@ import {
   CreditCard,
   AlertCircle,
   CheckCircle2,
-  X
+  Copy,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -69,15 +70,25 @@ const transactions = [
     status: "pending",
     type: "debit",
   },
-];function WalletContent() {
+];
+
+function WalletContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const amount = searchParams.get("amount");
   const poolId = searchParams.get("poolId");
-  const from = searchParams.get("from");
 
   const [wallet, setWallet] = useState({ available: 0, locked: 0 });
   const [isPaying, setIsPaying] = useState(false);
+
+  // Referral States
+  const [referralId, setReferralId] = useState("");
+  const [referralLink, setReferralLink] = useState("");
+  const [loadingReferral, setLoadingReferral] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);   // ← New state for copy feedback
+
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [addAmount, setAddAmount] = useState("");
   const [isProcessingAdd, setIsProcessingAdd] = useState(false);
@@ -93,10 +104,13 @@ const transactions = [
     return () => { document.body.removeChild(script); };
   }, []);
 
+  // Fetch Wallet Balance
   useEffect(() => {
     const fetchWallet = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/wallet`);
+        const res = await fetch(`${BASE_URL}/api/wallet`, {
+          credentials: "include",
+        });
         const data = await res.json();
         if (data && !data.error) {
           setWallet(data);
@@ -108,18 +122,60 @@ const transactions = [
     fetchWallet();
   }, [BASE_URL]);
 
+  // Generate Referral
+  const generateReferral = async () => {
+    try {
+      setLoadingReferral(true);
+      const res = await fetch(`${BASE_URL}/api/referral/generate`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.referralId) {
+        setReferralId(data.referralId);
+        const link = `${window.location.origin}/signup?ref=${data.referralId}`;
+        setReferralLink(link);
+      } else {
+        alert(data.message || "Failed to generate referral");
+      }
+    } catch (err) {
+      console.error("Referral generation error:", err);
+      alert("Failed to generate referral");
+    } finally {
+      setLoadingReferral(false);
+    }
+  };
+
+  const copyReferral = async () => {
+    if (!referralLink) return;
+
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopySuccess(true);
+
+      // Auto hide success message after 2 seconds
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      alert("Failed to copy link");
+    }
+  };
+
   const handlePay = async () => {
     setIsPaying(true);
     try {
-      // 1. Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // 2. Call the ACTUAL join API if we have a poolId
       if (poolId) {
         const res = await fetch(`${BASE_URL}/api/levels/join`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ poolId }),
+          credentials: "include",
         });
         const data = await res.json();
         if (!res.ok) {
@@ -264,11 +320,14 @@ const transactions = [
             </div>
             <div>
               <h3 className="font-bold text-lg text-white">Complete Your Entry</h3>
-              <p className="text-gray-400 text-sm">You are joining a Level Game. Please complete the payment of <span className="text-yellow-500 font-bold">₹{amount}</span>.</p>
+              <p className="text-gray-400 text-sm">
+                You are joining a Level Game. Please complete the payment of{" "}
+                <span className="text-yellow-500 font-bold">₹{amount}</span>.
+              </p>
             </div>
           </div>
           <div className="flex gap-3 relative z-10 w-full md:w-auto">
-            <button 
+            <button
               onClick={handlePay}
               disabled={isPaying}
               className="flex-1 md:flex-none bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-8 py-3 rounded-xl transition-all shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2"
@@ -276,7 +335,7 @@ const transactions = [
               {isPaying ? "Processing..." : "PAY NOW"}
               <CheckCircle2 size={18} />
             </button>
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 transition-all"
             >
@@ -290,7 +349,6 @@ const transactions = [
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* BALANCE CARD */}
         <div className="relative lg:col-span-2 bg-gradient-to-br from-[#0f1f1a] to-[#0b1511] rounded-2xl p-6 border border-[#1f3d32] overflow-hidden">
-          {/* background image */}
           <Image
             src="/images/wallet-hero.png"
             alt="wallet bg"
@@ -346,26 +404,10 @@ const transactions = [
       {/* ACTION CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
         {[
-          {
-            title: "Buy Tickets",
-            desc: "Purchase lottery tickets",
-            icon: <Ticket />,
-          },
-          {
-            title: "Auto-Draw",
-            desc: "Set up subscriptions",
-            icon: <RefreshCcw />,
-          },
-          {
-            title: "Referral Code",
-            desc: "Earn $20 per referral",
-            icon: <Users />,
-          },
-          {
-            title: "Transaction History",
-            desc: "View all transactions",
-            icon: <Clock />,
-          },
+          { title: "Buy Tickets", desc: "Purchase lottery tickets", icon: <Ticket /> },
+          { title: "Auto-Draw", desc: "Set up subscriptions", icon: <RefreshCcw /> },
+          { title: "Referral Code", desc: "Earn $20 per referral", icon: <Users /> },
+          { title: "Transaction History", desc: "View all transactions", icon: <Clock /> },
         ].map((item) => (
           <div
             key={item.title}
@@ -374,11 +416,64 @@ const transactions = [
             <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 mb-3">
               {item.icon}
             </div>
-
             <h3 className="font-semibold">{item.title}</h3>
             <p className="text-sm text-gray-400 mt-1">{item.desc}</p>
           </div>
         ))}
+      </div>
+
+      {/* REFERRAL SECTION */}
+      <div className="mt-10 bg-[#0f1613] rounded-2xl border border-[#1f2a26] p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="text-emerald-400" />
+          <h2 className="text-lg font-semibold">Referral</h2>
+        </div>
+
+        {!referralId && (
+          <button
+            onClick={generateReferral}
+            disabled={loadingReferral}
+            className="flex items-center gap-2 bg-yellow-500 text-black px-5 py-3 rounded-xl cursor-pointer hover:bg-yellow-600 transition-colors disabled:opacity-50"
+          >
+            <Sparkles size={16} />
+            {loadingReferral ? "Fetching..." : "Generate Referral ID"}
+          </button>
+        )}
+
+        {referralId && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-gray-400 text-sm">Referral ID</p>
+              <p className="text-yellow-400 font-semibold">{referralId}</p>
+            </div>
+
+            <div>
+              <p className="text-gray-400 text-sm">Referral Link</p>
+              <div className="flex gap-3 mt-2">
+                <input
+                  value={referralLink}
+                  readOnly
+                  className="flex-1 bg-[#0b1511] border border-[#1f2a26] rounded-xl px-4 py-2"
+                />
+                <button
+                  onClick={copyReferral}
+                  className="bg-emerald-500 text-black px-4 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-emerald-600 transition-colors"
+                >
+                  <Copy size={14} />
+                  Copy
+                </button>
+              </div>
+
+              {/* Success Message - Shown on the page instead of alert */}
+              {copySuccess && (
+                <div className="mt-3 flex items-center gap-2 text-emerald-400 text-sm font-medium">
+                  <CheckCircle2 size={18} />
+                  Referral link copied successfully!
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* TRANSACTIONS */}
@@ -401,11 +496,7 @@ const transactions = [
                       : "bg-gray-500/10 text-gray-400"
                   }`}
                 >
-                  {tx.type === "credit" ? (
-                    <ArrowDownLeft />
-                  ) : (
-                    <ArrowUpRight />
-                  )}
+                  {tx.type === "credit" ? <ArrowDownLeft /> : <ArrowUpRight />}
                 </div>
 
                 <div>
@@ -417,18 +508,14 @@ const transactions = [
               <div className="text-right">
                 <p
                   className={`font-semibold ${
-                    tx.type === "credit"
-                      ? "text-emerald-400"
-                      : "text-white"
+                    tx.type === "credit" ? "text-emerald-400" : "text-white"
                   }`}
                 >
                   {tx.amount}
                 </p>
                 <p
                   className={`text-sm ${
-                    tx.status === "pending"
-                      ? "text-yellow-400"
-                      : "text-gray-400"
+                    tx.status === "pending" ? "text-yellow-400" : "text-gray-400"
                   }`}
                 >
                   {tx.status}
