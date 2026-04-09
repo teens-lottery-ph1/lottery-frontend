@@ -41,18 +41,16 @@ export default function PaymentsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // [OPTIONAL]: Extract admin_token from cookies (Commented out for hardcoding/public access)
-        // const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        // [DEBUG]: Extract admin_token from cookies and print it
+        const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        console.log("ADMIN TOKEN FROM COOKIES:", adminToken);
         
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/transactions`, {
-          // headers: {
-          //   "Authorization": `Bearer ${adminToken}`
-          // },
-          // credentials: "include"
+          // headers: { "Authorization": `Bearer ${adminToken}` },
+          credentials: "include"
         });
         if (!res.ok) throw new Error('Failed to fetch transactions');
         const data = await res.json();
-        // Assuming API returns an array or an object with data property
         const txnsArray = Array.isArray(data) ? data : (data.data || []);
         setTransactions(txnsArray);
       } catch (err: any) {
@@ -87,14 +85,13 @@ export default function PaymentsPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // [OPTIONAL]: Extract admin_token from cookies (Commented out for hardcoding/public access)
-        // const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        // [DEBUG]: Extract token from cookie and print it
+        const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        console.log("ADMIN TOKEN (STATS) FROM COOKIES:", adminToken);
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`, {
-          // headers: {
-          //   "Authorization": `Bearer ${adminToken}`
-          // },
-          // credentials: "include"
+          // headers: { "Authorization": `Bearer ${adminToken}` },
+          credentials: "include"
         }); // API call to fetch stats using env var
         if (res.ok) {
           const data = await res.json();

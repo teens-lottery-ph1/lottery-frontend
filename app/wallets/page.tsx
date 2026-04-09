@@ -69,7 +69,7 @@ const transactions = [
     status: "pending",
     type: "debit",
   },
-];function WalletContent() {
+]; function WalletContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const amount = searchParams.get("amount");
@@ -96,7 +96,9 @@ const transactions = [
   useEffect(() => {
     const fetchWallet = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/wallet`);
+        const res = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`, {
+          credentials: "include"
+        });
         const data = await res.json();
         if (data && !data.error) {
           setWallet(data);
@@ -119,7 +121,10 @@ const transactions = [
         const res = await fetch(`${BASE_URL}/api/levels/join`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ poolId }),
+          body: JSON.stringify({ 
+            poolId,
+            userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0" 
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -145,20 +150,21 @@ const transactions = [
 
     setIsProcessingAdd(true);
     try {
-      // [OPTIONAL]: Extract token from cookie (Commented out for hardcoding)
-      // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+      // [DEBUG]: Extract token from cookie and print it
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+      console.log("USER TOKEN (ORDER) FROM COOKIES:", token);
 
       const orderRes = await fetch(`${BASE_URL}/api/payments/create-order`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           // "Authorization": `Bearer ${token}` 
         },
         // credentials: "include", 
-        body: JSON.stringify({ 
-          amount: amountVal, 
-          userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0", 
-          walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9" 
+        body: JSON.stringify({
+          amount: amountVal,
+          userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0",
+          walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9"
         }),
       });
       const orderData = await orderRes.json();
@@ -172,16 +178,18 @@ const transactions = [
         order_id: orderData.id,
         handler: async (response: any) => {
           try {
-            // [OPTIONAL]: Again, send auth token inside headers (Commented out for hardcoding)
-            // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+            // [DEBUG]: Again, extract token and print it
+            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+            console.log("USER TOKEN (VERIFY) FROM COOKIES:", token);
 
+            // Verify payment ONLY ONCE for add money.
             const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
               method: "POST",
-              headers: { 
+              headers: {
                 "Content-Type": "application/json",
                 // "Authorization": `Bearer ${token}` 
               },
-              // credentials: "include",
+              credentials: "include",
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -211,7 +219,9 @@ const transactions = [
             while (currentBalance <= initialBalance && attempts < maxAttempts) {
               await new Promise(r => setTimeout(r, 2500)); // Poll every 2.5 seconds
               try {
-                const walletRes = await fetch(`${BASE_URL}/api/wallet`);
+                const walletRes = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`, {
+                  credentials: "include"
+                });
                 const data = await walletRes.json();
                 if (data && !data.error) {
                   currentBalance = data.available;
@@ -234,7 +244,7 @@ const transactions = [
               // Timeout fallback
               alert("Payment verified, but wallet update is taking a bit longer. Please check back in a few minutes.");
             }
-            
+
             setAddAmount("");
           } catch (err: any) {
             console.error("Network Error during Verification:", err);
@@ -268,7 +278,7 @@ const transactions = [
             </div>
           </div>
           <div className="flex gap-3 relative z-10 w-full md:w-auto">
-            <button 
+            <button
               onClick={handlePay}
               disabled={isPaying}
               className="flex-1 md:flex-none bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-8 py-3 rounded-xl transition-all shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2"
@@ -276,7 +286,7 @@ const transactions = [
               {isPaying ? "Processing..." : "PAY NOW"}
               <CheckCircle2 size={18} />
             </button>
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 transition-all"
             >
@@ -309,7 +319,7 @@ const transactions = [
             </h1>
 
             <div className="flex gap-3 mt-6">
-              <button 
+              <button
                 onClick={() => setIsAddMoneyOpen(true)}
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-5 py-2 rounded-xl"
               >
@@ -395,11 +405,10 @@ const transactions = [
             >
               <div className="flex items-center gap-4">
                 <div
-                  className={`p-2 rounded-full ${
-                    tx.type === "credit"
-                      ? "bg-emerald-500/10 text-emerald-400"
-                      : "bg-gray-500/10 text-gray-400"
-                  }`}
+                  className={`p-2 rounded-full ${tx.type === "credit"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "bg-gray-500/10 text-gray-400"
+                    }`}
                 >
                   {tx.type === "credit" ? (
                     <ArrowDownLeft />
@@ -416,20 +425,18 @@ const transactions = [
 
               <div className="text-right">
                 <p
-                  className={`font-semibold ${
-                    tx.type === "credit"
-                      ? "text-emerald-400"
-                      : "text-white"
-                  }`}
+                  className={`font-semibold ${tx.type === "credit"
+                    ? "text-emerald-400"
+                    : "text-white"
+                    }`}
                 >
                   {tx.amount}
                 </p>
                 <p
-                  className={`text-sm ${
-                    tx.status === "pending"
-                      ? "text-yellow-400"
-                      : "text-gray-400"
-                  }`}
+                  className={`text-sm ${tx.status === "pending"
+                    ? "text-yellow-400"
+                    : "text-gray-400"
+                    }`}
                 >
                   {tx.status}
                 </p>
@@ -457,7 +464,7 @@ const transactions = [
       {isAddMoneyOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#0f1613] border border-[#1f2a26] rounded-2xl w-full max-w-md p-6 relative">
-            <button 
+            <button
               onClick={() => setIsAddMoneyOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white"
             >
@@ -468,7 +475,7 @@ const transactions = [
               <label className="block text-sm text-gray-400 mb-2">Amount (Min ₹50)</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
-                <input 
+                <input
                   type="number"
                   value={addAmount}
                   onChange={(e) => setAddAmount(e.target.value)}
@@ -477,7 +484,7 @@ const transactions = [
                 />
               </div>
             </div>
-            <button 
+            <button
               onClick={handleAddMoney}
               disabled={isProcessingAdd || !addAmount || Number(addAmount) < 50}
               className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 text-black font-bold py-3 rounded-xl transition-all"
