@@ -43,7 +43,7 @@ export default function LevelsGameAdminPage() {
     setIsLoading(true);
     try {
       const fetchJSON = async (url: string) => {
-        const res = await fetch(url);
+        const res = await fetch(url, { credentials: "include" });
         if (!res.ok) {
           console.warn(`Admin API responded with ${res.status}: ${url}`);
           return null;
@@ -90,6 +90,7 @@ export default function LevelsGameAdminPage() {
       const res = await fetch(`${BASE_URL}/api/admin/level-games`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(newGameForm),
       });
       const data = await res.json();
@@ -109,6 +110,7 @@ export default function LevelsGameAdminPage() {
       const res = await fetch(`${BASE_URL}/api/admin/levels/force-complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ poolId }),
       });
       const data = await res.json();
@@ -126,6 +128,7 @@ export default function LevelsGameAdminPage() {
       const res = await fetch(`${BASE_URL}/api/admin/levels`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(newPoolForm),
       });
 

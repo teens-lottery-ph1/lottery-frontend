@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { walletData } from '../_components/mock-data';
+import { useState, useEffect } from 'react';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
 import Avatar from '../_components/Avatar';
@@ -12,11 +11,10 @@ const formatINR = (value: number) => {
 };
 
 export default function WalletPage() {
-  // API CALL: Backend endpoint to fetch wallet data
-  // GET /api/admin/wallet/users
+  const [walletsList, setWalletsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [adjustmentOpen, setAdjustmentOpen] = useState(false);
-  const [selectedUserWallet, setSelectedUserWallet] =
-    useState<(typeof walletData)[0] | null>(null);
+  const [selectedUserWallet, setSelectedUserWallet] = useState<any | null>(null);
   const [adjustmentForm, setAdjustmentForm] = useState({
     amount: '',
     type: 'Add',
@@ -24,12 +22,32 @@ export default function WalletPage() {
     note: '',
   });
 
-  const totalBalance = 0;
-  const avgBalance = 0;
-  const txnToday = 0;
-  const lockedPrizes = 0;
+  const fetchWallets = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/wallets`, {
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWalletsList(data.wallets || []);
+      }
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleOpenAdjustment = (user: (typeof walletData)[0]) => {
+  useEffect(() => {
+    fetchWallets();
+  }, []);
+
+  const totalBalance = walletsList.reduce((sum, w) => sum + Number(w.balance || 0), 0);
+  const avgBalance = walletsList.length ? totalBalance / walletsList.length : 0;
+  const txnToday = walletsList.length; // Placeholder for real transactions stats
+  const lockedPrizes = walletsList.reduce((sum, w) => sum + Number(w.locked || 0), 0);
+
+  const handleOpenAdjustment = (user: any) => {
     setSelectedUserWallet(user);
     setAdjustmentOpen(true);
   };
@@ -45,14 +63,33 @@ export default function WalletPage() {
     });
   };
 
-  const handleSubmitAdjustment = () => {
-    // API CALL: Backend endpoint to apply wallet adjustment
-    // POST /api/admin/wallet/adjust with adjustmentForm
-    console.log('Adjustment submitted:', {
-      userId: selectedUserWallet?.userId,
-      ...adjustmentForm,
-    });
-    handleCloseAdjustment();
+  const handleSubmitAdjustment = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/wallet/adjust`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          userId: selectedUserWallet?.userId,
+          amount: Number(adjustmentForm.amount),
+          type: adjustmentForm.type.toLowerCase(), // 'add' or 'deduct'
+          reason: adjustmentForm.reason,
+          note: adjustmentForm.note
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Wallet adjusted successfully!");
+        fetchWallets();
+        handleCloseAdjustment();
+      } else {
+        alert(data.message || "Failed to adjust wallet");
+      }
+    } catch (error) {
+      console.error("Adjustment error:", error);
+      alert("Error processing adjustment");
+    }
   };
 
   return (
@@ -118,7 +155,9 @@ export default function WalletPage() {
                 </tr>
               </thead>
               <tbody>
-                {walletData.map((user) => (
+                {loading ? (
+                  <tr><td colSpan={6} className="py-8 text-center text-gray-400">Loading wallets...</td></tr>
+                ) : walletsList.map((user) => (
                   <tr
                     key={user.userId}
                     className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
@@ -132,16 +171,16 @@ export default function WalletPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4 font-semibold text-[#00d68f]">
-                      ₹{formatINR(user.balance)}
+                      ₹{formatINR(Number(user.balance))}
                     </td>
                     <td className="py-3 px-4 font-semibold text-[#f5c518]">
-                      ₹{formatINR(user.bonus)}
+                      ₹{formatINR(Number(user.bonus || 0))}
                     </td>
                     <td className="py-3 px-4 text-[#ff4d6d]">
-                      ₹{formatINR(user.locked)}
+                      ₹{formatINR(Number(user.locked || 0))}
                     </td>
                     <td className="py-3 px-4 text-[#4b5563]">
-                      {user.lastTxn}
+                      {new Date(user.updatedAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">

@@ -24,7 +24,9 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     try {
       // Assuming the backend endpoint is /api/categories or /api/game-types
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/categories`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/categories`, {
+        credentials: "include"
+      });
       if (res.ok) {
         const data = await res.json();
         // Handle varied formats: [] or { data: [] }
@@ -48,6 +50,7 @@ export default function CategoriesPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({ name, description, icon }),
       });
 
