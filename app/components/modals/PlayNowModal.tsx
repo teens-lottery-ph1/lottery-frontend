@@ -108,8 +108,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     setIsProcessing(true);
     console.log("PAYMENT INITIALIZED:", { totalAmount, selectedNumbers, gameCredits: game.credits }); // DEBUG LOG
     try {
-      // [OPTIONAL]: Extract token from cookie (Commented out for hardcoding)
-      // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+      // [DEBUG]: Extract token from cookie and print it
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+      console.log("USER TOKEN (ORDER) FROM COOKIES:", token);
 
       const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/create-order`, {
         method: "POST",
@@ -138,8 +139,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
             // Verify payment ONLY ONCE for all selected numbers.
             // NOTE: Wallet update is handled asynchronously by the Razorpay webhook.
             // Do NOT update wallet manually here.
-            // [OPTIONAL]: Again, send auth token inside headers (Commented out for hardcoding)
-            // const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+            // [DEBUG]: Again, extract token and print it
+            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
+            console.log("USER TOKEN (VERIFY) FROM COOKIES:", token);
 
             const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
               method: "POST",
@@ -147,7 +149,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                 "Content-Type": "application/json",
                 // "Authorization": `Bearer ${token}` 
               },
-              // credentials: "include",
+              credentials: "include",
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

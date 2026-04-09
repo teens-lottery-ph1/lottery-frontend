@@ -96,7 +96,9 @@ const transactions = [
   useEffect(() => {
     const fetchWallet = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`);
+        const res = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`, {
+          credentials: "include"
+        });
         const data = await res.json();
         if (data && !data.error) {
           setWallet(data);
@@ -217,7 +219,9 @@ const transactions = [
             while (currentBalance <= initialBalance && attempts < maxAttempts) {
               await new Promise(r => setTimeout(r, 2500)); // Poll every 2.5 seconds
               try {
-                const walletRes = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`);
+                const walletRes = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`, {
+                  credentials: "include"
+                });
                 const data = await walletRes.json();
                 if (data && !data.error) {
                   currentBalance = data.available;
