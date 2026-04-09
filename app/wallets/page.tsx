@@ -13,11 +13,13 @@ import {
   CreditCard,
   AlertCircle,
   CheckCircle2,
-  X
+  X,
+  Lock
 } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
+import AuthPromptModal from "@/app/components/modals/AuthPromptModal";
 
 const transactions = [
   {
@@ -82,6 +84,7 @@ const transactions = [
   const [addAmount, setAddAmount] = useState("");
   const [isProcessingAdd, setIsProcessingAdd] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
 
   // Load Razorpay script dynamically
@@ -96,11 +99,11 @@ const transactions = [
   useEffect(() => {
     const fetchWallet = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`, {
+        const res = await fetch(`${BASE_URL}/api/wallet`, {
           credentials: "include"
         });
         const data = await res.json();
-        if (data && !data.error) {
+        if (data && data.success) {
           setWallet(data);
         }
       } catch (err) {
@@ -111,6 +114,11 @@ const transactions = [
   }, [BASE_URL]);
 
   const handlePay = async () => {
+    // Check Auth
+    if (!localStorage.getItem("user")) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     setIsPaying(true);
     try {
       // 1. Simulate payment processing
@@ -121,9 +129,9 @@ const transactions = [
         const res = await fetch(`${BASE_URL}/api/levels/join`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ 
-            poolId,
-            userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0" 
+            poolId
           }),
         });
         const data = await res.json();
@@ -150,21 +158,14 @@ const transactions = [
 
     setIsProcessingAdd(true);
     try {
-      // [DEBUG]: Extract token from cookie and print it
-      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
-      console.log("USER TOKEN (ORDER) FROM COOKIES:", token);
-
       const orderRes = await fetch(`${BASE_URL}/api/payments/create-order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // "Authorization": `Bearer ${token}` 
         },
-        // credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
-          amount: amountVal,
-          userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0",
-          walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9"
+          amount: amountVal
         }),
       });
       const orderData = await orderRes.json();
@@ -178,25 +179,18 @@ const transactions = [
         order_id: orderData.id,
         handler: async (response: any) => {
           try {
-            // [DEBUG]: Again, extract token and print it
-            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
-            console.log("USER TOKEN (VERIFY) FROM COOKIES:", token);
-
             // Verify payment ONLY ONCE for add money.
             const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                // "Authorization": `Bearer ${token}` 
               },
               credentials: "include",
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0",
                 amount: amountVal,
-                walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9",
                 type: "Deposit"
               }),
             });
@@ -219,14 +213,14 @@ const transactions = [
             while (currentBalance <= initialBalance && attempts < maxAttempts) {
               await new Promise(r => setTimeout(r, 2500)); // Poll every 2.5 seconds
               try {
-                const walletRes = await fetch(`${BASE_URL}/api/wallet?userId=815fe5c4-24ed-41e1-aaf1-3287ff650be0`, {
+                const walletRes = await fetch(`${BASE_URL}/api/wallet`, {
                   credentials: "include"
                 });
                 const data = await walletRes.json();
-                if (data && !data.error) {
+                if (data && data.success) {
                   currentBalance = data.available;
                   if (currentBalance > initialBalance) {
-                    setWallet(data); // Sync state seamlessly
+                    setWallet(data); 
                     break;
                   }
                 }
@@ -315,12 +309,18 @@ const transactions = [
             </div>
 
             <h1 className="text-5xl font-bold text-yellow-400 mt-4">
-              ₹{wallet.available.toLocaleString()}
+              ₹{(wallet?.available ?? 0).toLocaleString()}
             </h1>
 
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setIsAddMoneyOpen(true)}
+                onClick={() => {
+                  if (!localStorage.getItem("user")) {
+                    setIsAuthModalOpen(true);
+                  } else {
+                    setIsAddMoneyOpen(true);
+                  }
+                }}
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-5 py-2 rounded-xl"
               >
                 <Plus size={18} /> Add Funds
@@ -494,6 +494,13 @@ const transactions = [
           </div>
         </div>
       )}
+
+      <AuthPromptModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        title="Wallet Access restricted"
+        message="Please sign in to your account to add funds, withdraw, or participate in premium levels."
+      />
     </>
   );
 }

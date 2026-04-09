@@ -10,8 +10,9 @@
  */
 
 import { useState, useEffect } from "react";
-import { X, Check, ChevronRight, ChevronLeft, Trash2, Zap } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // WHY? To add smooth, cinematic transitions
+import { X, Check, ChevronRight, ChevronLeft, Trash2, Zap, Wallet } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion"; 
+import { useRouter } from "next/navigation";
 
 // Define the shape of our Game data
 interface Game {
@@ -33,6 +34,8 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [bookedNumbers, setBookedNumbers] = useState<number[]>([]);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const router = useRouter();
 
   // Dynamically load Razorpay for the payment step
   useEffect(() => {
@@ -84,6 +87,22 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
         }
       };
       fetchBookedTickets();
+
+      // NEW: Fetch Wallet Balance for unified flow
+      const fetchWallet = async () => {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/wallet`, {
+            credentials: "include"
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            setWalletBalance(data.available);
+          }
+        } catch (err) {
+          console.error("Failed to fetch wallet:", err);
+        }
+      };
+      fetchWallet();
     }
   }, [isOpen, game]);
 
@@ -105,24 +124,53 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
   // Handle the payment process
   const handlePayment = async () => {
     if (selectedNumbers.length === 0) return;
-    setIsProcessing(true);
-    console.log("PAYMENT INITIALIZED:", { totalAmount, selectedNumbers, gameCredits: game.credits }); // DEBUG LOG
-    try {
-      // [DEBUG]: Extract token from cookie and print it
-      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
-      console.log("USER TOKEN (ORDER) FROM COOKIES:", token);
+    
+    // DECISION: Wallet vs Razorpay
+    if (walletBalance >= totalAmount) {
+      await handleWalletPayment();
+    } else {
+      await handleRazorpayPayment();
+    }
+  };
 
+  const handleWalletPayment = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/wallet/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          drawId: game?.id,
+          ticketNumbers: selectedNumbers.join(","),
+          totalAmount: totalAmount
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Wallet payment failed");
+
+      alert("Success! Tickets purchased using wallet balance.");
+      onClose();
+      // Optional: Refresh balance or redirect
+    } catch (err: any) {
+      alert(err.message || "Payment failed");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    setIsProcessing(true);
+    try {
       const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/create-order`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          // "Authorization": `Bearer ${token}` 
         },
-        // credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({ 
-          amount: totalAmount, 
-          userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0", 
-          walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9" 
+          amount: totalAmount
         }),
       });
       const orderData = await orderRes.json();
@@ -132,34 +180,24 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Lottery Network",
-        description: `Playing ${game.name}`,
+        description: `Playing ${game?.name}`,
         order_id: orderData.id,
         handler: async (response: any) => {
           try {
-            // Verify payment ONLY ONCE for all selected numbers.
-            // NOTE: Wallet update is handled asynchronously by the Razorpay webhook.
-            // Do NOT update wallet manually here.
-            // [DEBUG]: Again, extract token and print it
-            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
-            console.log("USER TOKEN (VERIFY) FROM COOKIES:", token);
-
             const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
               method: "POST",
               headers: { 
                 "Content-Type": "application/json",
-                // "Authorization": `Bearer ${token}` 
               },
               credentials: "include",
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                drawId: game.id,
+                drawId: game?.id,
                 ticketNumber: selectedNumbers.join(","),
                 pickedNumbers: selectedNumbers.join(","),
-                userId: "815fe5c4-24ed-41e1-aaf1-3287ff650be0",
-                amount: totalAmount,
-                walletId: "136cf2d4-c002-4a5f-8735-1fbab0ff21e9"
+                amount: totalAmount
               }),
             });
             if (!verifyRes.ok) {
@@ -170,7 +208,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
             onClose();
           } catch (err: any) {
             console.error("Network Error during Verification:", err);
-            alert(`Verification failed: ${err.message || 'Could not verify payment. Please ensure the backend is running.'}`);
+            alert(`Verification failed: ${err.message || 'Could not verify payment.'}`);
           }
         },
         theme: { color: "#00FFA3" },
@@ -178,6 +216,7 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
       new (window as any).Razorpay(options).open();
     } catch (e) {
       console.error(e);
+      alert("Failed to initiate external payment.");
     } finally {
       setIsProcessing(false);
     }
@@ -370,6 +409,17 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                   <span className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-1">Total Payable</span>
                   <p className="text-3xl font-black text-white leading-none">₹{totalAmount.toLocaleString()}</p>
                 </div>
+
+                <div className="h-10 w-[1px] bg-white/10 hidden lg:block" />
+
+                <div className="hidden lg:flex flex-col">
+                  <span className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <Wallet className="w-3 h-3" /> available Balance
+                  </span>
+                  <p className={`text-xl font-bold leading-none ${walletBalance >= totalAmount ? 'text-[#00FFA3]' : 'text-red-400'}`}>
+                    ₹{walletBalance.toLocaleString()}
+                  </p>
+                </div>
               </div>
 
               <motion.button
@@ -381,15 +431,23 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                   w-full sm:w-auto px-10 h-16 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3
                   ${isProcessing || selectedNumbers.length === 0
                     ? "bg-white/5 text-white/20 border border-white/10 cursor-not-allowed"
-                    : "bg-[#00FFA3] text-black"
+                    : walletBalance >= totalAmount
+                      ? "bg-[#00FFA3] text-black shadow-[0_0_30px_rgba(0,255,163,0.3)]"
+                      : "bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]"
                   }
                 `}
               >
                 {isProcessing ? (
-                  <div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span>CONFIRM TICKETS</span>
+                    <span className="uppercase">
+                      {selectedNumbers.length === 0 
+                        ? "Pick Numbers" 
+                        : walletBalance >= totalAmount 
+                          ? "Pay via Wallet" 
+                          : "Add Funds & Pay"}
+                    </span>
                     <ChevronRight className="w-6 h-6" />
                   </>
                 )}
