@@ -8,6 +8,7 @@ on:
 env:
   IMAGE_NAME: lottery-frontend
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  IMAGE_TAG: v1.${{ github.run_number }}
 
 jobs:
 
@@ -30,16 +31,17 @@ jobs:
       - name: Build Application
         run: npm run build
 
-      # 🔍 SonarQube Scan
+      # 🔍 SonarQube Scan (FIXED AUTH)
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
             -Dsonar.projectKey=lottery-frontend
             -Dsonar.sources=.
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
   # 🔹 2. DOCKER BUILD & PUSH
   docker:
@@ -55,11 +57,11 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:latest .
+          docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG .
 
       - name: Push Docker Image
         run: |
-          docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
+          docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
 
   # 🔹 3. DEPLOY TO KUBERNETES (EC2)
   deploy:
@@ -76,7 +78,7 @@ jobs:
           script: |
             echo "🚀 Starting Deployment..."
 
-            # Navigate to project (create if not exists)
+            # Clone if not exists
             if [ ! -d "lottery-frontend" ]; then
               git clone https://github.com/teens-dev/lottery-frontend.git
             fi
@@ -88,13 +90,13 @@ jobs:
 
             echo "📦 Updating Kubernetes deployment..."
 
-            # Update image dynamically
-            sed -i "s|image: .*|image: $DOCKERHUB_USERNAME/$IMAGE_NAME:latest|g" k8s/deployment.yaml
+            # Update image with new version
+            sed -i "s|image: .*|image: $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG|g" k8s/deployment.yaml
 
-            # Apply Kubernetes configs
+            # Apply configs
             kubectl apply -f k8s/
 
-            # Restart deployment to pull latest image
+            # Restart deployment
             kubectl rollout restart deployment nextjs-app
 
             echo "✅ Deployment Completed!"
