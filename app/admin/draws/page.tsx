@@ -35,8 +35,9 @@ export default function DrawsPage() {
       setIsLoading(true);
 
       const API = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-      const res = await fetch(`${API}/api/draws`);
+      const res = await fetch(`${API}/api/draws`, {
+        credentials: "include"
+      });
 
       if (!res.ok) throw new Error('Failed to fetch draws');
 
