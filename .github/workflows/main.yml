@@ -1,0 +1,100 @@
+name: Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - feature/devops-setup
+
+env:
+  IMAGE_NAME: lottery-frontend
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+
+  # 🔹 1. BUILD + SONAR SCAN
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: npm run build
+
+      # 🔍 SonarQube Scan
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=lottery-frontend
+            -Dsonar.sources=.
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # 🔹 2. DOCKER BUILD & PUSH
+  docker:
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
+
+  # 🔹 3. DEPLOY TO KUBERNETES (EC2)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "🚀 Starting Deployment..."
+
+            # Navigate to project (create if not exists)
+            if [ ! -d "lottery-frontend" ]; then
+              git clone https://github.com/teens-dev/lottery-frontend.git
+            fi
+
+            cd lottery-frontend
+
+            git checkout feature/devops-setup
+            git pull origin feature/devops-setup
+
+            echo "📦 Updating Kubernetes deployment..."
+
+            # Update image dynamically
+            sed -i "s|image: .*|image: $DOCKERHUB_USERNAME/$IMAGE_NAME:latest|g" k8s/deployment.yaml
+
+            # Apply Kubernetes configs
+            kubectl apply -f k8s/
+
+            # Restart deployment to pull latest image
+            kubectl rollout restart deployment nextjs-app
+
+            echo "✅ Deployment Completed!"
