@@ -17,7 +17,7 @@ const [formData, setFormData] = useState({
   drawendDate:'',
   description:'',
   rngSeedHash:'',
-  status:'draft',
+  status:'live',
   isGuaranteed:true
 });
 

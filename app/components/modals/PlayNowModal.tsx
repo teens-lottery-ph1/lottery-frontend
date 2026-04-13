@@ -165,14 +165,16 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     try {
       const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/create-order`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
-        credentials: "include", 
-        body: JSON.stringify({ 
-          amount: totalAmount
-        }),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ amount: totalAmount }),
       });
+
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to create payment order");
+      }
+
       const orderData = await orderRes.json();
 
       const options = {
@@ -184,31 +186,29 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
         order_id: orderData.id,
         handler: async (response: any) => {
           try {
+            // Razorpay sometimes omits order_id from the response; use our stored value as fallback
             const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/verify`, {
               method: "POST",
-              headers: { 
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               credentials: "include",
               body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
+                razorpay_order_id: response.razorpay_order_id || orderData.id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 drawId: game?.id,
                 ticketNumber: selectedNumbers.join(","),
                 pickedNumbers: selectedNumbers.join(","),
-                amount: totalAmount
+                amount: totalAmount,
               }),
             });
             if (!verifyRes.ok) {
               const errData = await verifyRes.json().catch(() => ({}));
-              throw new Error(errData.error || `Server Error during verification`);
+              throw new Error(errData.error || "Server Error during verification");
             }
             alert("Success! Your tickets are booked.");
             onClose();
           } catch (err: any) {
-            console.error("Network Error during Verification:", err);
-            alert(`Verification failed: ${err.message || 'Could not verify payment.'}`);
+            alert(`Verification failed: ${err.message || "Could not verify payment."}`);
           }
         },
         theme: { color: "#00FFA3" },
