@@ -11,7 +11,6 @@ This page contains TWO systems:
 
 1. 🎮 Level Game System (NEW - dynamic, API based)
 2. 🏆 VIP Levels System (OLD - static, keep unchanged)
-
 DO NOT MIX BOTH
 ============================================= */
 
@@ -31,7 +30,7 @@ export default function LevelsPage() {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/level-games`);
+        const res = await fetch(`${BASE_URL}/api/level-games`, { credentials: "include" });
         const data = await res.json();
         const gamesList = Array.isArray(data) ? data : [];
         setGames(gamesList);
@@ -53,7 +52,7 @@ export default function LevelsPage() {
       setLoading(true);
       try {
         const fetchJSON = async (url: string) => {
-          const res = await fetch(url);
+          const res = await fetch(url, { credentials: "include" });
           if (!res.ok) {
             console.warn(`API responded with ${res.status}: ${url}`);
             return null;
@@ -71,7 +70,7 @@ export default function LevelsPage() {
         if (levelsData) setGameLevels(Array.isArray(levelsData) ? levelsData : []);
 
         // 2. Get user entries
-        const entriesData = await fetchJSON(`${BASE_URL}/api/levels/my-entries`);
+        const entriesData = await fetchJSON(`${BASE_URL}/api/levels/my-entries?levelGameId=${activeGameId}`);
         if (entriesData) setUserEntries(Array.isArray(entriesData) ? entriesData : []);
 
         // 3. Get wallet
@@ -98,27 +97,39 @@ export default function LevelsPage() {
    * we unlock it so it correctly reflects as joinable on the user screen.
    */
   const isLevelUnlocked = (levelNum: number, currentPool?: any) => {
+    // All levels unlocked unconditionally as per requirements (No progression blocking)
+    return true;
+
+    /* 
+    =================================================
+    OLD PROGRESSION LOGIC (Commented out as requested)
+    =================================================
+    
     // Basic progression: Levels 1 and 2 are always joinable for new players
     if (levelNum <= 2) return true;
+
+    const validLevels = Array.isArray(gameLevels) ? gameLevels : [];
+    const validEntries = Array.isArray(userEntries) ? userEntries : [];
     
     // N+2 Logic: Level L is unlocked if L-2 is completed
-    const prevPool = Array.isArray(gameLevels) && gameLevels.find(p => Number(p.level) === levelNum - 2);
+    const prevPool = validLevels.find(p => Number(p.level) === levelNum - 2);
     
     // Check if the required previous level was completed in a pool or recorded in user entries
-    const isPrevPoolCompleted = prevPool && prevPool.status === 'completed';
-    const hasCompletedPrevEntry = Array.isArray(userEntries) && userEntries.some(e => Number(e.level) === levelNum - 2 && e.status === 'paid');
+    const isPrevPoolCompleted = prevPool ? prevPool.status === 'completed' : false;
+    const hasCompletedPrevEntry = validEntries.some(e => Number(e.level) === levelNum - 2 && e.status === 'paid' &&
+      (e.levelGameId === activeGameId || e.gameId === activeGameId || (!e.levelGameId && !e.gameId))
+    );
     
     if (isPrevPoolCompleted || hasCompletedPrevEntry) return true;
 
-    /* 
-       AUTO-UNLOCK FOR SKIPPED LEVELS:
-       If the admin has explicitly created a pool for this level (e.g. Level 4) 
-       but NO pool exists for Level 2 (skipped creation), we unlock it.
-       This ensures manually initialized high levels are playable.
-    */
+    // AUTO-UNLOCK FOR SKIPPED LEVELS:
+    // If the admin has explicitly created a pool for this level (e.g. Level 4) 
+    // but NO pool exists for Level 2 (skipped creation), we unlock it.
+    // This ensures manually initialized high levels are playable.
     if (currentPool && !prevPool) return true;
     
     return false;
+    */
   };
 
   /**
@@ -135,10 +146,12 @@ export default function LevelsPage() {
   };
 
   const handleWithdraw = async () => {
+    if (wallet.available <= 0) return;
     try {
       const res = await fetch(`${BASE_URL}/api/withdraw`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ amount: wallet.available }),
       });
       const data = await res.json();
@@ -183,7 +196,8 @@ export default function LevelsPage() {
 
               <button
                 onClick={handleWithdraw}
-                className="bg-yellow-500 px-3 py-1 rounded text-black flex items-center gap-1"
+                disabled={wallet.available <= 0}
+                className={`px-3 py-1 rounded text-black flex items-center gap-1 ${wallet.available > 0 ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-600 cursor-not-allowed'}`}
               >
                 Withdraw <ArrowUpRight size={14} />
               </button>
@@ -219,7 +233,8 @@ export default function LevelsPage() {
               */}
               {Array.from({ length: 10 }, (_, i) => i + 1).map((lvlNum) => {
                 // 1. Try to find the active pool for this level in the API state
-                const g = Array.isArray(gameLevels) && gameLevels.find(p => Number(p.level) === lvlNum);
+                const validLevels = Array.isArray(gameLevels) ? gameLevels : [];
+                const g = validLevels.find(p => Number(p.level) === lvlNum);
                 
                 // 2. Determine if the level is joinable based on our unlock logic
                 const unlocked = isLevelUnlocked(lvlNum, g);
@@ -271,7 +286,6 @@ export default function LevelsPage() {
                         <Lock size={14} className="text-red-500" />
                       )}
                     </div>
-
                     <div className="mb-4">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Progress</p>
                       <div className="flex justify-between items-end mb-1">
@@ -284,17 +298,20 @@ export default function LevelsPage() {
                         />
                       </div>
                     </div>
-
                     <div className="mb-6">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Reward</p>
                       <p className="text-2xl font-black text-yellow-500">₹{reward}</p>
                     </div>
-
                     <button
                       disabled={!unlocked}
-                      onClick={() => handleJoinLevel(id, entryFee)}
+                      onClick={() => {
+                        // If there is no active pool, pass the needed info as a pseudo ID so backend knows what to create
+                        // We use the existing game ID and requested level to form the pool ID request payload
+                        const joinId = g?.id || `placeholder-${activeGameId}-${lvlNum}`;
+                        handleJoinLevel(joinId, entryFee);
+                      }}
                       className={`w-full font-bold py-2 rounded transition-colors flex items-center justify-center gap-2 ${
-                        unlocked 
+                        unlocked
                           ? "bg-white text-black hover:bg-yellow-500" 
                           : "bg-gray-800 text-gray-500 cursor-not-allowed"
                       }`}
