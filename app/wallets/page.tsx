@@ -130,7 +130,7 @@ const transactions = [
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             poolId
           }),
         });
@@ -163,7 +163,7 @@ const transactions = [
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           amount: amountVal
         }),
@@ -219,8 +219,18 @@ const transactions = [
                 const data = await walletRes.json();
                 if (data && data.success) {
                   currentBalance = data.available;
+                  // if (currentBalance > initialBalance) {
+                  //   setWallet(data); 
+                  //   break;
+                  // }
                   if (currentBalance > initialBalance) {
-                    setWallet(data); 
+                    setWallet(data);
+
+                    // notify navbar
+                    window.dispatchEvent(
+                      new CustomEvent("walletUpdated", { detail: data.available })
+                    );
+
                     break;
                   }
                 }
@@ -495,7 +505,7 @@ const transactions = [
         </div>
       )}
 
-      <AuthPromptModal 
+      <AuthPromptModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         title="Wallet Access restricted"
