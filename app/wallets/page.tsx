@@ -9,12 +9,12 @@ import {
   RefreshCcw,
   Users,
   Clock,
-  TrendingUp,
+  // TrendingUp,
   CreditCard,
   AlertCircle,
   CheckCircle2,
   X,
-  Lock
+  // Lock
 } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -301,7 +301,8 @@ const transactions = [
       )}
 
       {/* TOP SUMMARY */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> */}
+      <div className="grid grid-cols-1 gap-6"></div>
         {/* BALANCE CARD */}
         <div className="relative lg:col-span-2 bg-gradient-to-br from-[#0f1f1a] to-[#0b1511] rounded-2xl p-6 border border-[#1f3d32] overflow-hidden">
           {/* background image */}
@@ -344,7 +345,7 @@ const transactions = [
         </div>
 
         {/* SIDE STATS */}
-        <div className="flex flex-col gap-6">
+        {/* <div className="flex flex-col gap-6">
           <div className="bg-[#0f1613] rounded-2xl p-5 border border-[#1f2a26]">
             <div className="flex items-center gap-2 text-emerald-400">
               <TrendingUp size={18} />
@@ -361,7 +362,7 @@ const transactions = [
             <h2 className="text-3xl font-bold mt-2">3,450</h2>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* ACTION CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
