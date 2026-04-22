@@ -205,8 +205,12 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
               const errData = await verifyRes.json().catch(() => ({}));
               throw new Error(errData.error || "Server Error during verification");
             }
-            alert("Success! Your tickets are booked.");
-            onClose();
+
+window.dispatchEvent(new Event("walletUpdated"));
+alert("Success! Your tickets are booked.");
+onClose();
+
+
           } catch (err: any) {
             alert(`Verification failed: ${err.message || "Could not verify payment."}`);
           }
