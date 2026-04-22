@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Gamepad2, ArrowUpRight, History, Lock, Unlock, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
 /* ================= IMPORTANT =================
@@ -16,6 +15,7 @@ DO NOT MIX BOTH
 
 export default function LevelsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
 
   const [games, setGames] = useState<any[]>([]);
@@ -25,8 +25,46 @@ export default function LevelsPage() {
   const [userEntries, setUserEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH DATA ================= */
+  /* ================= HELPERS ================= */
 
+  const fetchJSON = useCallback(async (url: string) => {
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) { console.warn(`API ${res.status}: ${url}`); return null; }
+    const ct = res.headers.get("content-type");
+    if (!ct?.includes("application/json")) { console.warn(`Non-JSON: ${url}`); return null; }
+    return res.json();
+  }, []);
+
+  /* ================= FETCH ALL ENTRIES (no game filter) ================= */
+  // ✅ Called on load + every 5s + after every join
+  // ✅ No ?levelGameId param — returns ALL entries for logged-in user
+  const fetchAllEntries = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/levels/my-entries`, {
+        credentials: "include",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setUserEntries(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Entries fetch error:", err);
+    }
+  }, [BASE_URL]);
+
+  /* ================= FETCH WALLET ================= */
+  const fetchWallet = useCallback(async () => {
+    const data = await fetchJSON(`${BASE_URL}/api/wallet`);
+    if (data && typeof data === "object") setWallet(data);
+  }, [BASE_URL, fetchJSON]);
+
+  /* ================= FETCH LEVELS FOR ACTIVE GAME ================= */
+  const fetchLevels = useCallback(async (gameId: string) => {
+    const data = await fetchJSON(`${BASE_URL}/api/levels?levelGameId=${gameId}`);
+    if (data) setGameLevels(Array.isArray(data) ? data : []);
+  }, [BASE_URL, fetchJSON]);
+
+  /* ================= INITIAL LOAD: games list ================= */
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -34,59 +72,49 @@ export default function LevelsPage() {
         const data = await res.json();
         const gamesList = Array.isArray(data) ? data : [];
         setGames(gamesList);
-        if (gamesList.length > 0 && !activeGameId) {
-          setActiveGameId(gamesList[0].id);
-        }
+        if (gamesList.length > 0) setActiveGameId(gamesList[0].id);
       } catch (err) {
         console.error("Error fetching games:", err);
       }
     };
-
     fetchGames();
-  }, []);
+  }, [BASE_URL]);
 
+  /* ================= WHEN ACTIVE GAME CHANGES ================= */
   useEffect(() => {
     if (!activeGameId) return;
 
-    const fetchData = async () => {
+    const init = async () => {
       setLoading(true);
-      try {
-        const fetchJSON = async (url: string) => {
-          const res = await fetch(url, { credentials: "include" });
-          if (!res.ok) {
-            console.warn(`API responded with ${res.status}: ${url}`);
-            return null;
-          }
-          const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            console.warn(`API did not return JSON: ${url}`);
-            return null;
-          }
-          return res.json();
-        };
-
-        // 1. Get levels (pools)
-        const levelsData = await fetchJSON(`${BASE_URL}/api/levels?levelGameId=${activeGameId}`);
-        if (levelsData) setGameLevels(Array.isArray(levelsData) ? levelsData : []);
-
-        // 2. Get user entries
-        const entriesData = await fetchJSON(`${BASE_URL}/api/levels/my-entries?levelGameId=${activeGameId}`);
-        if (entriesData) setUserEntries(Array.isArray(entriesData) ? entriesData : []);
-
-        // 3. Get wallet
-        const walletData = await fetchJSON(`${BASE_URL}/api/wallet`);
-        if (walletData && typeof walletData === "object") {
-          setWallet(walletData);
-        }
-      } catch (err) {
-        console.error("Error fetching level data:", err);
-      } finally {
-        setLoading(false);
-      }
+      await Promise.all([
+        fetchLevels(activeGameId),
+        fetchAllEntries(),   // ✅ All entries, no filter
+        fetchWallet(),
+      ]);
+      setLoading(false);
     };
 
-    fetchData();
-  }, [activeGameId]);
+    init();
+
+    // ✅ Real-time polling every 5 seconds
+    const interval = setInterval(async () => {
+      await fetchLevels(activeGameId);
+      await fetchAllEntries();
+      await fetchWallet();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeGameId, fetchLevels, fetchAllEntries, fetchWallet]);
+
+  /* ================= RE-FETCH WHEN RETURNING FROM WALLET PAGE ================= */
+  // When user comes back from /wallets page after joining, refresh immediately
+  useEffect(() => {
+    const fromParam = searchParams?.get("from");
+    if (fromParam === "level-game") {
+      fetchAllEntries();
+      fetchWallet();
+    }
+  }, [searchParams, fetchAllEntries, fetchWallet]);
 
   /* ================= ACTIONS ================= */
 
@@ -134,14 +162,11 @@ export default function LevelsPage() {
 
   /**
    * Action: Join a level pool.
-   * This navigates the user to the wallet/payment page with the fixed fee.
-   * 
-   * @param poolId - The unique ID of the pool in the database.
-   * @param fee - The fixed entry fee for this game.
+   * Refresh entries immediately then navigate to wallet page.
    */
   const handleJoinLevel = async (poolId: string, fee: number) => {
-    // We pass the fee as an 'amount' parameter to the wallets page.
-    // The wallets page will handle the actual wallet deduction or payment.
+    // ✅ Refresh before navigating so entries are fresh when we return
+    await fetchAllEntries();
     router.push(`/wallets?amount=${fee}&poolId=${poolId}&from=level-game`);
   };
 
@@ -157,7 +182,7 @@ export default function LevelsPage() {
       const data = await res.json();
       if (data.success) {
         alert("Withdrawal successful!");
-        window.location.reload(); 
+        window.location.reload();
       }
     } catch (err) {
       console.error("Withdraw Error:", err);
@@ -188,16 +213,16 @@ export default function LevelsPage() {
                 <p className="text-xs text-gray-500">Available</p>
                 <p className="text-green-400 font-bold">₹{wallet.available}</p>
               </div>
-
               <div>
                 <p className="text-xs text-gray-500">Locked</p>
                 <p className="text-gray-400 font-bold">₹{wallet.locked}</p>
               </div>
-
               <button
                 onClick={handleWithdraw}
                 disabled={wallet.available <= 0}
-                className={`px-3 py-1 rounded text-black flex items-center gap-1 ${wallet.available > 0 ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-600 cursor-not-allowed'}`}
+                className={`px-3 py-1 rounded text-black flex items-center gap-1 ${
+                  wallet.available > 0 ? "bg-yellow-500 hover:bg-yellow-600" : "bg-gray-600 cursor-not-allowed"
+                }`}
               >
                 Withdraw <ArrowUpRight size={14} />
               </button>
@@ -205,7 +230,6 @@ export default function LevelsPage() {
           </div>
 
           {/* ================= GAME SELECTOR (DYNAMIC) ================= */}
-
           <div className="flex flex-wrap gap-2 bg-gray-900 p-1 rounded-xl w-fit">
             {Array.isArray(games) && games.map((g) => (
               <button
@@ -221,42 +245,33 @@ export default function LevelsPage() {
           </div>
 
           {/* ================= LEVELS GRID ================= */}
-
           {loading ? (
             <p className="text-gray-500">Loading levels...</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {/* 
-                  RENDER LOOP: We show 10 potential levels.
-                  If a level exists in the database (g), we use its data (progress/ID).
-                  If it doesn't exist, we show it as a grayed-out placeholder.
+              {/*
+                RENDER LOOP: We show 10 potential levels.
+                If a level exists in the database (g), we use its data (progress/ID).
+                If it doesn't exist, we show it as a grayed-out placeholder.
               */}
               {Array.from({ length: 10 }, (_, i) => i + 1).map((lvlNum) => {
-                // 1. Try to find the active pool for this level in the API state
                 const validLevels = Array.isArray(gameLevels) ? gameLevels : [];
                 const g = validLevels.find(p => Number(p.level) === lvlNum);
-                
-                // 2. Determine if the level is joinable based on our unlock logic
+
                 const unlocked = isLevelUnlocked(lvlNum, g);
-                
+
                 /* ================= NEW FINANCIAL MODEL (FIXED FEE) ================= */
-                // RULE 1: Entry fee is now FIXED. It's the same for Level 1 as it is for Level 10.
-                // We find the base fee from the currently active game's configuration.
+                // RULE 1: Entry fee is FIXED — same for every level
                 const activeGame = games.find(game => game.id === activeGameId);
                 const baseFee = activeGame?.entryFee ? Number(activeGame.entryFee) : 100;
-                
-                // We ignore any level-based scaling. Every level simply costs the baseFee.
-                const entryFee = baseFee; 
+                const entryFee = baseFee;
 
-                // RULE 2: Reward is strictly 2x the entry fee for ALL levels.
-                // This simplifies the UI and makes it clear what the player wins.
+                // RULE 2: Reward = 2x entry fee for ALL levels
                 const reward = entryFee * 2;
-                
-                /* ================= OTHER DATA ================= */
+
                 const currentUsers = g?.currentUsers || 0;
-                // Required users still scale with level (L*4) to make higher levels harder to fill
-                const requiredUsers = g?.requiredUsers || (lvlNum * 4); 
-                const id = g?.id || `placeholder-${lvlNum}`;
+                // Required users scale with level (L*4) — higher levels harder to fill
+                const requiredUsers = g?.requiredUsers || (lvlNum * 4);
 
                 return (
                   <motion.div
@@ -265,8 +280,8 @@ export default function LevelsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: lvlNum * 0.05 }}
                     className={`relative p-5 rounded-2xl border transition-all ${
-                      unlocked 
-                        ? "bg-gray-900/50 border-gray-800 hover:border-yellow-500/50" 
+                      unlocked
+                        ? "bg-gray-900/50 border-gray-800 hover:border-yellow-500/50"
                         : "bg-gray-900/10 border-gray-700/30 opacity-60 grayscale"
                     }`}
                   >
@@ -286,6 +301,7 @@ export default function LevelsPage() {
                         <Lock size={14} className="text-red-500" />
                       )}
                     </div>
+
                     <div className="mb-4">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Progress</p>
                       <div className="flex justify-between items-end mb-1">
@@ -294,25 +310,25 @@ export default function LevelsPage() {
                       <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]"
-                          style={{ width: `${(currentUsers / requiredUsers) * 100}%` }}
+                          style={{ width: `${Math.min((currentUsers / requiredUsers) * 100, 100)}%` }}
                         />
                       </div>
                     </div>
+
                     <div className="mb-6">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Reward</p>
                       <p className="text-2xl font-black text-yellow-500">₹{reward}</p>
                     </div>
+
                     <button
                       disabled={!unlocked}
                       onClick={() => {
-                        // If there is no active pool, pass the needed info as a pseudo ID so backend knows what to create
-                        // We use the existing game ID and requested level to form the pool ID request payload
                         const joinId = g?.id || `placeholder-${activeGameId}-${lvlNum}`;
                         handleJoinLevel(joinId, entryFee);
                       }}
                       className={`w-full font-bold py-2 rounded transition-colors flex items-center justify-center gap-2 ${
                         unlocked
-                          ? "bg-white text-black hover:bg-yellow-500" 
+                          ? "bg-white text-black hover:bg-yellow-500"
                           : "bg-gray-800 text-gray-500 cursor-not-allowed"
                       }`}
                     >
@@ -324,13 +340,17 @@ export default function LevelsPage() {
               })}
             </div>
           )}
-          
 
-          {/* ================= USER ENTRIES ================= */}
-
+          {/* ================= MY ENTRIES — ALL GAMES, REAL-TIME ================= */}
           <div className="bg-gray-900 p-6 rounded-xl">
             <h2 className="font-bold flex items-center gap-2 mb-4 text-xl">
               <History size={18} className="text-yellow-500" /> My Entries
+              {/* ✅ Live count badge */}
+              {userEntries.length > 0 && (
+                <span className="ml-2 text-xs bg-yellow-500 text-black font-bold px-2 py-0.5 rounded-full">
+                  {userEntries.length}
+                </span>
+              )}
             </h2>
 
             {(!Array.isArray(userEntries) || userEntries.length === 0) ? (
@@ -342,15 +362,44 @@ export default function LevelsPage() {
                     key={e.id}
                     className="flex justify-between p-3 bg-black/50 rounded-lg border border-gray-800"
                   >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-0.5">
+                      {/* Game name + level */}
                       <span className="text-gray-300">
                         <span className="text-yellow-500 font-bold uppercase mr-1">
                           {e.gameName || "Level Game"}
                         </span>
-                        (Level {e.level})
+                        — Level {e.level}
+                      </span>
+
+                      {/* ✅ Live pool status */}
+                      {e.poolStatus && (
+                        <span className={`text-[10px] font-bold uppercase tracking-wide ${
+                          e.poolStatus === "completed" ? "text-green-400" :
+                          e.poolStatus === "filling"   ? "text-yellow-400" : "text-gray-500"
+                        }`}>
+                          Pool: {e.poolStatus} · {e.currentCount}/{e.requiredCount} players
+                        </span>
+                      )}
+
+                      {/* Date */}
+                      <span className="text-[10px] text-gray-600">
+                        {new Date(e.createdAt).toLocaleString("en-IN", {
+                          day: "2-digit", month: "short", year: "numeric",
+                          hour: "2-digit", minute: "2-digit"
+                        })}
                       </span>
                     </div>
-                    <span className="text-green-400 font-black self-center">₹{e.amount}</span>
+
+                    <div className="flex flex-col items-end justify-center gap-1">
+                      <span className="text-green-400 font-black">₹{e.amount}</span>
+                      {/* Entry status badge */}
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                        e.status === "paid"   ? "bg-green-900 text-green-400" :
+                        e.status === "active" ? "bg-yellow-900 text-yellow-400" : "bg-gray-800 text-gray-400"
+                      }`}>
+                        {e.status}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -359,7 +408,6 @@ export default function LevelsPage() {
         </div>
 
         {/* ================= VIP SYSTEM (UNCHANGED) ================= */}
-
         <div className="text-center text-gray-600 text-sm mt-32 border-t border-gray-900 pt-8">
           <p>Legacy VIP System (maintained for compatibility)</p>
         </div>
