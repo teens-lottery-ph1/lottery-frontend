@@ -150,16 +150,8 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Wallet payment failed");
 
-
-window.dispatchEvent(
-  new CustomEvent("walletUpdated", {
-    detail: walletBalance - totalAmount,
-  })
-);
-alert("Success! Tickets purchased using wallet balance.");
-onClose();
-
-
+      alert("Success! Tickets purchased using wallet balance.");
+      onClose();
       // Optional: Refresh balance or redirect
     } catch (err: any) {
       alert(err.message || "Payment failed");

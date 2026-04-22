@@ -19,7 +19,8 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`,
+        { credentials: "include" }
       );
 
       const data = await res.json();

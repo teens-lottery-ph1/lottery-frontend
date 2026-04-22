@@ -17,7 +17,7 @@ const [formData, setFormData] = useState({
   drawendDate:'',
   description:'',
   rngSeedHash:'',
-  status:'draft',
+  status:'live',
   isGuaranteed:true
 });
 
@@ -77,10 +77,11 @@ try{
 setLoading(true);
 
 const response = await fetch(
-  "http://localhost:10000/api/create-draw",
+  `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/create-draw`,
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({
       game_type_id: Number(formData.gameTypeId),
       name: formData.name,

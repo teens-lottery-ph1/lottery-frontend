@@ -22,8 +22,8 @@ export default function TicketsAdminPage() {
 
     try {
       const [ticketsRes, usersRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tickets`),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`)
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tickets`, { credentials: "include" }),
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`, { credentials: "include" })
       ]);
 
       const ticketsJson = await ticketsRes.json();

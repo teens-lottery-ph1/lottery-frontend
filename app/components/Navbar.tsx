@@ -95,17 +95,17 @@ export default function Navbar() {
   }, []);
 
   /* Listen for wallet updates from other components */
-useEffect(() => {
-  const handleWalletUpdate = () => {
-    fetchWallet();
-  };
+  useEffect(() => {
+    const handleWalletUpdate = (event: CustomEvent) => {
+      setWallet({ available: event.detail });
+    };
 
-  window.addEventListener("walletUpdated", handleWalletUpdate);
+    window.addEventListener("walletUpdated", handleWalletUpdate as EventListener);
 
-  return () => {
-    window.removeEventListener("walletUpdated", handleWalletUpdate);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("walletUpdated", handleWalletUpdate as EventListener);
+    };
+  }, []);
 
   const logout = async () => {
     try {
