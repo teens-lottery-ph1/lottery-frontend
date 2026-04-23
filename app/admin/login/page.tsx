@@ -37,7 +37,12 @@ export default function Page() {
         localStorage.setItem("adminSession", "active");
         router.replace("/admin/dashboard");
       } else {
-        setError(data.message || "Invalid credentials");
+        if (data.errors) {
+          const firstError = Object.values(data.errors)[0] as string[];
+          setError(firstError[0] || "Validation failed");
+        } else {
+          setError(data.message || "Invalid credentials");
+        }
       }
 
     } catch (error) {

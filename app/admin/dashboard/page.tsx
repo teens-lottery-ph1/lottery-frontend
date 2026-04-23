@@ -15,18 +15,18 @@ export default function DashboardPage() {
 
   const [users, setUsers] = useState<any[]>([]);
   const [revenue, setRevenue] = useState<number>(0);
+  const [ticketsCount, setTicketsCount] = useState<number>(0);
+  const [activeDraws, setActiveDraws] = useState<number>(0);
   const [loadingRevenue, setLoadingRevenue] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Fetch Users
   const fetchUsers = async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`
-      );
-
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`, {
+        credentials: "include"
+      });
       const data = await res.json();
-
       setUsers(data.data || []);
     } catch (error) {
       console.error('Error fetching users', error);
@@ -36,36 +36,56 @@ export default function DashboardPage() {
   // Fetch Revenue
   const fetchRevenue = async () => {
     setIsUpdating(true);
-
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/revenue`
-      );
-
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/revenue`, {
+        credentials: "include"
+      });
       const data = await res.json();
-
       if (data.success) {
         setRevenue(data.revenue);
       }
-
     } catch (error) {
       console.error('Error fetching revenue', error);
     } finally {
       setLoadingRevenue(false);
+      setTimeout(() => setIsUpdating(false), 300);
+    }
+  };
 
-      setTimeout(() => {
-        setIsUpdating(false);
-      }, 300);
+  // Fetch Stats (Tickets & Draws)
+  const fetchStats = async () => {
+    try {
+      // 1. Fetch Tickets Count
+      const tRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tickets/count`, {
+        credentials: "include"
+      });
+      const tData = await tRes.json();
+      if (tData.success) {
+        setTicketsCount(tData.count || tData.total || 0);
+      }
+
+      // 2. Fetch Active Draws
+      const dRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/draws?status=live`, {
+        credentials: "include"
+      });
+      const dData = await dRes.json();
+      if (dData.success) {
+        setActiveDraws(dData.pagination?.total || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching stats', error);
     }
   };
 
   useEffect(() => {
     fetchUsers();
     fetchRevenue();
+    fetchStats();
 
     const interval = setInterval(() => {
       fetchUsers();
       fetchRevenue();
+      fetchStats();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -81,7 +101,7 @@ export default function DashboardPage() {
 
         <StatCard
           icon="👥"
-          value={totalUsers?.toString()}
+          value={(users?.length || 0).toString()}
           label="Total Users"
           change="Live"
           changeType="up"
@@ -103,19 +123,20 @@ export default function DashboardPage() {
 
         <StatCard
           icon="🎫"
-          value="0"
+          value={(ticketsCount || 0).toString()}
           label="Tickets Sold"
-          change="0%"
+          change="Live"
           changeType="up"
           accentColor="#d97706"
         />
 
         <StatCard
           icon="🎰"
-          value="0"
+          value={(activeDraws || 0).toString()}
           label="Active Draws"
-          changeType="live"
-          accentColor="#16a34a"
+          change="Live"
+          changeType="up"
+          accentColor="#7c3aed"
         />
 
       </div>

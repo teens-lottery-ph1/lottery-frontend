@@ -41,22 +41,16 @@ const [toDate, setToDate] = useState('');
       setIsLoading(true);
       setError(null);
       try {
-        
         // [DEBUG]: Extract admin_token from cookies and print it
-const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/transactions`, {
-  method: "GET",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json"
-  }
-});
-
-
-if (!res.ok) {
-  const errText = await res.text();
-  console.log("TRANSACTION API ERROR:", errText);
-  throw new Error(errText);
-}        const data = await res.json();
+        const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        console.log("ADMIN TOKEN FROM COOKIES:", adminToken);
+        
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/transactions`, {
+          // headers: { "Authorization": `Bearer ${adminToken}` },
+          credentials: "include"
+        });
+        if (!res.ok) throw new Error('Failed to fetch transactions');
+        const data = await res.json();
         const txnsArray = Array.isArray(data) ? data : (data.data || []);
         setTransactions(txnsArray);
       } catch (err: any) {
@@ -92,14 +86,14 @@ const filteredTransactions = transactions.filter((txn) => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        
-const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`, {
-  method: "GET",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json"
-  }
-});// API call to fetch stats using env var
+        // [DEBUG]: Extract token from cookie and print it
+        const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
+        console.log("ADMIN TOKEN (STATS) FROM COOKIES:", adminToken);
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`, {
+          // headers: { "Authorization": `Bearer ${adminToken}` },
+          credentials: "include"
+        }); // API call to fetch stats using env var
         if (res.ok) {
           const data = await res.json();
           setTotalRevenue(Number(data.totalRevenue) || 0); // Update total revenue

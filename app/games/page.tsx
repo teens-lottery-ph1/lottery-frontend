@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Trophy, Zap, Crown, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PlayNowModal from "@/app/components/modals/PlayNowModal";
+import AuthPromptModal from "@/app/components/modals/AuthPromptModal";
 
 // ============================================================================
 // CountdownTimer (UNCHANGED)
@@ -80,6 +82,7 @@ interface Game {
   odds: string;
   status: string;
   createdAt: string;
+  id: string; // Added ID for modal support
 }
 
 // ============================================================================
@@ -105,6 +108,9 @@ export default function GamesPage() {
   const [filter, setFilter] = useState("all");
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGame, setSelectedGame] = useState<any>(null);
+  const [isPlayModalOpen, setIsPlayModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -134,6 +140,7 @@ export default function GamesPage() {
 
           status: item.status || "draft",
           createdAt: item.createdAt,
+          id: item.id,
         }));
 
         // ✅ SORTING LOGIC (STATUS + CREATED TIME)
@@ -166,6 +173,19 @@ export default function GamesPage() {
 
     fetchGames();
   }, []);
+
+  const handlePlayNow = (game: Game) => {
+    // Check Auth
+    if (!localStorage.getItem("user")) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setSelectedGame({
+      ...game,
+      odds: game.odds // Map odds correctly
+    });
+    setIsPlayModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -236,7 +256,10 @@ export default function GamesPage() {
               </div>
 
               {/* Button */}
-              <button className="w-full mt-6 bg-[#00FFA3] text-black py-3 rounded-xl font-semibold">
+              <button 
+                onClick={() => handlePlayNow(game)}
+                className="w-full mt-6 bg-[#00FFA3] text-black py-3 rounded-xl font-semibold hover:bg-[#00FFA3]/90 transition-all hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]"
+              >
                 Play Now — {game.credits} credits
               </button>
 
@@ -245,6 +268,19 @@ export default function GamesPage() {
         </div>
 
       </div>
+
+      <PlayNowModal 
+        isOpen={isPlayModalOpen}
+        onClose={() => setIsPlayModalOpen(false)}
+        game={selectedGame}
+      />
+
+      <AuthPromptModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        title="Sign In to Play"
+        message="You need an active account to participate in lottery draws and win real prize pools."
+      />
     </main>
   );
 }
