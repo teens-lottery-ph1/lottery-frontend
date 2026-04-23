@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import StatCard from "../_components/StatCard";
 import Badge from "../_components/Badge";
 import Avatar from "../_components/Avatar";
@@ -10,6 +11,7 @@ const formatINR = (value: number) => {
 };
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -139,7 +141,7 @@ export default function UsersPage() {
             </select>
 
             {/* Level */}
-            <select
+            {/* <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
               className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl px-4 py-2.5 text-[13px]"
@@ -149,7 +151,7 @@ export default function UsersPage() {
               <option>2</option>
               <option>3</option>
               <option>4</option>
-            </select>
+            </select> */}
 
           </div>
 
@@ -159,7 +161,10 @@ export default function UsersPage() {
               📥 Export CSV
             </button>
 
-            <button className="bg-[#f5c518] text-black font-bold px-6 py-2.5 rounded-xl text-[13px]">
+            <button
+              onClick={() => router.push("/admin/users/add")}
+              className="bg-[#f5c518] text-black font-bold px-6 py-2.5 rounded-xl text-[13px]"
+            >
               + Add User
             </button>
 
