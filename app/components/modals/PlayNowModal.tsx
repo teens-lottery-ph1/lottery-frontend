@@ -30,11 +30,12 @@ interface PlayNowModalProps {
   isOpen: boolean;
   onClose: () => void;
   game: Game | null;
+  onPurchaseSuccess?: () => void;
 }
 
 const POPUP_DURATION = 6000;
 
-export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProps) {
+export default function PlayNowModal({ isOpen, onClose, game, onPurchaseSuccess }: PlayNowModalProps) {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -179,6 +180,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
       // Refresh booked numbers and clear selected numbers
       await refreshBookedNumbers();
       setSelectedNumbers([]);
+      if (onPurchaseSuccess) {
+        onPurchaseSuccess();
+      }
 
       setTimeout(() => onClose(), 2000);
     } catch (err: any) {
@@ -237,6 +241,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
             // Refresh booked numbers and clear selection
             await refreshBookedNumbers();
             setSelectedNumbers([]);
+            if (onPurchaseSuccess) {
+              onPurchaseSuccess();
+            }
 
             setTimeout(() => onClose(), 2000);
           } catch (err: any) {
@@ -275,18 +282,17 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
             exit={{ scale: 0.8, y: 30, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 320 }}
             onClick={(e) => e.stopPropagation()}
-           className={`
+            className={`
   relative flex flex-col items-center gap-4
   px-8 py-7 rounded-2xl
   border border-[rgba(0,255,163,0.18)]
   bg-[#07140F]
   w-[90%] max-w-sm text-center
   transition-all duration-300
-  ${
-    toast.type === "success"
-      ? "shadow-[0_20px_70px_rgba(0,255,163,0.15)]"
-      : "border-red-500/30 shadow-[0_20px_70px_rgba(239,68,68,0.15)]"
-  }
+  ${toast.type === "success"
+                ? "shadow-[0_20px_70px_rgba(0,255,163,0.15)]"
+                : "border-red-500/30 shadow-[0_20px_70px_rgba(239,68,68,0.15)]"
+              }
 `}
           >
             <button
@@ -296,11 +302,10 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
               <X className="w-4 h-4 text-white/70" />
             </button>
             <div
-              className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                toast.type === "success"
+              className={`w-20 h-20 rounded-full flex items-center justify-center ${toast.type === "success"
                   ? "bg-[#00FFA3]/20 shadow-[0_0_40px_rgba(0,255,163,0.4)]"
                   : "bg-red-500/20 shadow-[0_0_40px_rgba(239,68,68,0.4)]"
-              }`}
+                }`}
             >
               {toast.type === "success" ? (
                 <Check className="w-10 h-10 text-[#00FFA3] stroke-[2.5]" />
@@ -310,9 +315,8 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
             </div>
             <div>
               <p
-                className={`text-2xl font-black ${
-                  toast.type === "success" ? "text-[#00FFA3]" : "text-red-400"
-                }`}
+                className={`text-2xl font-black ${toast.type === "success" ? "text-[#00FFA3]" : "text-red-400"
+                  }`}
               >
                 {toast.type === "success" ? "Payment Successful!" : "Payment Failed"}
               </p>
@@ -373,10 +377,10 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                   >
                     <Trash2 className="w-4 h-4" /> Clear
                   </button>
-                 <button
-  type="button"
-  onClick={onClose}
-  className="
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="
     w-12 h-12 rounded-2xl 
     bg-[#07140F]
     border border-[rgba(0,255,163,0.18)]
@@ -385,9 +389,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     hover:border-[#00FFA3]
     hover:shadow-[0_0_20px_rgba(0,255,163,0.25)]
   "
->
-  <X className="w-6 h-6 text-[#00FFA3]" />
-</button>
+                  >
+                    <X className="w-6 h-6 text-[#00FFA3]" />
+                  </button>
                 </div>
               </div>
 
@@ -467,10 +471,9 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                               disabled={isProcessing || isBooked}
                               className={`
                                 relative h-12 rounded-xl flex items-center justify-center text-sm font-black transition-all duration-300
-                                ${
-                                  isBooked
-                                    ? "bg-red-500/10 border border-red-500/20 text-red-500/50 cursor-not-allowed"
-                                    : isSelected
+                                ${isBooked
+                                  ? "bg-red-500/10 border border-red-500/20 text-red-500/50 cursor-not-allowed"
+                                  : isSelected
                                     ? "bg-[#00FFA3] text-black shadow-[0_0_25px_rgba(0,255,163,0.5)] border-[#00FFA3]"
                                     : "bg-white/5 border border-transparent bg-clip-border text-white/40 hover:border-[#00FFA3]/50 hover:shadow-[0_0_8px_rgba(0,255,163,0.3)] hover:text-white"
                                 }
@@ -549,10 +552,10 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
                   ) : (
                     <>
                       <span className="uppercase">
-                        {selectedNumbers.length === 0 
-                          ? "Pick Numbers" 
-                          : walletBalance >= totalAmount 
-                            ? "Pay via Wallet" 
+                        {selectedNumbers.length === 0
+                          ? "Pick Numbers"
+                          : walletBalance >= totalAmount
+                            ? "Pay via Wallet"
                             : "Add Funds & Pay"}
                       </span>
                       <ChevronRight className="w-6 h-6" />

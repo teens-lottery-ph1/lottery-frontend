@@ -112,8 +112,7 @@ export default function GamesPage() {
   const [isPlayModalOpen, setIsPlayModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchGames = async () => {
+  const fetchGames = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/draws`
@@ -171,6 +170,7 @@ export default function GamesPage() {
       }
     };
 
+  useEffect(() => {
     fetchGames();
   }, []);
 
@@ -273,6 +273,7 @@ export default function GamesPage() {
         isOpen={isPlayModalOpen}
         onClose={() => setIsPlayModalOpen(false)}
         game={selectedGame}
+        onPurchaseSuccess={fetchGames}
       />
 
       <AuthPromptModal 
