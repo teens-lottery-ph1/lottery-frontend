@@ -23,8 +23,8 @@ const formatDateTime = (date: Date) => {
 export default function PaymentsPage() {
   // API CALL: Backend endpoint to fetch transactions with filters
   // GET /api/admin/payments/transactions?fromDate=&toDate=&type=&status=
-  const [fromDate, setFromDate] = useState('2026-02-18');
-  const [toDate, setToDate] = useState('2026-02-25');
+const [fromDate, setFromDate] = useState('');
+const [toDate, setToDate] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -62,12 +62,13 @@ export default function PaymentsPage() {
     fetchTransactions();
   }, []);
 
-  const filteredTransactions = transactions.filter((txn) => {
-    const txnDate = new Date(txn.datetime);
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
+const filteredTransactions = transactions.filter((txn) => {
+  const txnDate = new Date(txn.datetime);
 
-    const matchesDate = txnDate >= from && txnDate <= to;
+  const matchesFrom = fromDate ? txnDate >= new Date(fromDate) : true;
+  const matchesTo = toDate ? txnDate <= new Date(toDate + "T23:59:59") : true;
+
+  const matchesDate = matchesFrom && matchesTo;
     const matchesType = typeFilter === 'All' || txn.type === typeFilter;
     const matchesStatus =
       statusFilter === 'All' || txn.status === statusFilter;
@@ -259,9 +260,9 @@ export default function PaymentsPage() {
                 <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   User
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
+                {/* <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Method
-                </th>
+                </th> */}
                 <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Amount
                 </th>
@@ -318,7 +319,7 @@ export default function PaymentsPage() {
                       <p className="text-[#111827]">{txn.userName}</p>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-[#4b5563]">
+                  {/* <td className="py-3 px-4 text-[#4b5563]">
                     {txn.method === 'UPI'
                       ? '📱'
                       : txn.method === 'Card'
@@ -327,7 +328,7 @@ export default function PaymentsPage() {
                           ? '🏦'
                           : '👛'}{' '}
                     {txn.method}
-                  </td>
+                  </td> */}
                   <td className="py-3 px-4 font-semibold">
                     <span
                       className={
