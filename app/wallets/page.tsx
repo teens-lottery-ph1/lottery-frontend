@@ -147,7 +147,7 @@ const transactions = [
     } finally {
       setIsPaying(false);
     }
-  };
+  }; 
 
   const handleAddMoney = async () => {
     const amountVal = Number(addAmount);

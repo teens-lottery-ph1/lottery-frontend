@@ -40,8 +40,7 @@ export default function FeaturedGames() {
     }
   };
 
-  useEffect(() => {
-    const fetchGames = async () => {
+  const fetchGames = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/draws`
@@ -104,6 +103,7 @@ export default function FeaturedGames() {
       }
     };
 
+  useEffect(() => {
     fetchGames();
   }, []);
 
@@ -204,6 +204,7 @@ export default function FeaturedGames() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         game={selectedGame}
+        onPurchaseSuccess={fetchGames}
       />
 
       <AuthPromptModal 
