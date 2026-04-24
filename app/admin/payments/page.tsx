@@ -220,8 +220,7 @@ export default function PaymentsPage() {
                 <option>PrizePayout</option>
               </select>
             </div>
-
-            <div>
+          <div>
               <label className="block text-[11px] font-semibold text-[#6b7280] mb-1">
                 Status
               </label>
