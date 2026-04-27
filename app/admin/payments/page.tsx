@@ -23,8 +23,8 @@ const formatDateTime = (date: Date) => {
 export default function PaymentsPage() {
   // API CALL: Backend endpoint to fetch transactions with filters
   // GET /api/admin/payments/transactions?fromDate=&toDate=&type=&status=
-  const [fromDate, setFromDate] = useState('2026-02-18');
-  const [toDate, setToDate] = useState('2026-02-25');
+const [fromDate, setFromDate] = useState('');
+const [toDate, setToDate] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -41,16 +41,22 @@ export default function PaymentsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // [DEBUG]: Extract admin_token from cookies and print it
-        const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
-        console.log("ADMIN TOKEN FROM COOKIES:", adminToken);
         
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/transactions`, {
-          // headers: { "Authorization": `Bearer ${adminToken}` },
-          credentials: "include"
-        });
-        if (!res.ok) throw new Error('Failed to fetch transactions');
-        const data = await res.json();
+        // [DEBUG]: Extract admin_token from cookies and print it
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/transactions`, {
+  method: "GET",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json"
+  }
+});
+
+
+if (!res.ok) {
+  const errText = await res.text();
+  console.log("TRANSACTION API ERROR:", errText);
+  throw new Error(errText);
+}        const data = await res.json();
         const txnsArray = Array.isArray(data) ? data : (data.data || []);
         setTransactions(txnsArray);
       } catch (err: any) {
@@ -62,12 +68,13 @@ export default function PaymentsPage() {
     fetchTransactions();
   }, []);
 
-  const filteredTransactions = transactions.filter((txn) => {
-    const txnDate = new Date(txn.datetime);
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
+const filteredTransactions = transactions.filter((txn) => {
+  const txnDate = new Date(txn.datetime);
 
-    const matchesDate = txnDate >= from && txnDate <= to;
+  const matchesFrom = fromDate ? txnDate >= new Date(fromDate) : true;
+  const matchesTo = toDate ? txnDate <= new Date(toDate + "T23:59:59") : true;
+
+  const matchesDate = matchesFrom && matchesTo;
     const matchesType = typeFilter === 'All' || txn.type === typeFilter;
     const matchesStatus =
       statusFilter === 'All' || txn.status === statusFilter;
@@ -85,14 +92,14 @@ export default function PaymentsPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // [DEBUG]: Extract token from cookie and print it
-        const adminToken = document.cookie.split('; ').find(row => row.startsWith('admin_token='))?.split('=')[1] || '';
-        console.log("ADMIN TOKEN (STATS) FROM COOKIES:", adminToken);
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`, {
-          // headers: { "Authorization": `Bearer ${adminToken}` },
-          credentials: "include"
-        }); // API call to fetch stats using env var
+        
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/stats`, {
+  method: "GET",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json"
+  }
+});// API call to fetch stats using env var
         if (res.ok) {
           const data = await res.json();
           setTotalRevenue(Number(data.totalRevenue) || 0); // Update total revenue
@@ -259,9 +266,9 @@ export default function PaymentsPage() {
                 <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   User
                 </th>
-                <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
+                {/* <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Method
-                </th>
+                </th> */}
                 <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
                   Amount
                 </th>
@@ -318,7 +325,7 @@ export default function PaymentsPage() {
                       <p className="text-[#111827]">{txn.userName}</p>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-[#4b5563]">
+                  {/* <td className="py-3 px-4 text-[#4b5563]">
                     {txn.method === 'UPI'
                       ? '📱'
                       : txn.method === 'Card'
@@ -327,7 +334,7 @@ export default function PaymentsPage() {
                           ? '🏦'
                           : '👛'}{' '}
                     {txn.method}
-                  </td>
+                  </td> */}
                   <td className="py-3 px-4 font-semibold">
                     <span
                       className={

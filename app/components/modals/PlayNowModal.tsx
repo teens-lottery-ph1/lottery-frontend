@@ -150,8 +150,16 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Wallet payment failed");
 
-      alert("Success! Tickets purchased using wallet balance.");
-      onClose();
+
+window.dispatchEvent(
+  new CustomEvent("walletUpdated", {
+    detail: walletBalance - totalAmount,
+  })
+);
+alert("Success! Tickets purchased using wallet balance.");
+onClose();
+
+
       // Optional: Refresh balance or redirect
     } catch (err: any) {
       alert(err.message || "Payment failed");
@@ -205,8 +213,12 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
               const errData = await verifyRes.json().catch(() => ({}));
               throw new Error(errData.error || "Server Error during verification");
             }
-            alert("Success! Your tickets are booked.");
-            onClose();
+
+window.dispatchEvent(new Event("walletUpdated"));
+alert("Success! Your tickets are booked.");
+onClose();
+
+
           } catch (err: any) {
             alert(`Verification failed: ${err.message || "Could not verify payment."}`);
           }
