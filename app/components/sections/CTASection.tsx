@@ -18,7 +18,7 @@ const CTASection = () => {
 
           {/* Primary Neon Button */}
           <Link
-            href="#"
+            href="/games"
             className="
               inline-flex items-center gap-2 
               rounded-xl 

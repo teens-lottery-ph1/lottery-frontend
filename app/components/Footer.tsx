@@ -87,22 +87,37 @@ const Footer = () => {
               Connect
             </h4>
             <ul className="space-y-2 text-sm text-[hsl(var(--muted-foreground))]">
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Twitter
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Discord
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Telegram
-                </a>
-              </li>
-            </ul>
+  <li>
+    <a
+      href="https://twitter.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:text-white transition-colors"
+    >
+      Twitter
+    </a>
+  </li>
+  <li>
+    <a
+      href="https://discord.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:text-white transition-colors"
+    >
+      Discord
+    </a>
+  </li>
+  <li>
+    <a
+      href="https://telegram.org"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:text-white transition-colors"
+    >
+      Telegram
+    </a>
+  </li>
+</ul>
           </div>
         </div>
 

@@ -47,7 +47,7 @@ export default function HowItWorks() {
 
         <div className="text-center mt-16">
           <Link
-            href="#"
+            href="/how-to-play"
             className="inline-flex items-center rounded-xl border border-[rgba(0,255,163,0.2)] px-8 py-3 font-semibold hover:bg-[#06231A] transition-all"
           >
             Learn More
