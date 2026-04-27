@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Trophy, Users } from "lucide-react";
 import CountdownTimer from "@/app/components/ui/CountdownTimer";
 import PlayNowModal from "@/app/components/modals/PlayNowModal";
+import AuthPromptModal from "@/app/components/modals/AuthPromptModal";
 
 export default function FeaturedGames() {
 
@@ -23,6 +24,7 @@ export default function FeaturedGames() {
   const [games, setGames] = useState<Game[]>([]);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // ✅ STATUS BADGE STYLE (same as GamesPage)
   const getStatusBadge = (status: string) => {
@@ -106,6 +108,12 @@ export default function FeaturedGames() {
   }, []);
 
   const handlePlayNow = (game: Game) => {
+    // Check if user is logged in
+    const user = localStorage.getItem("user");
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     setSelectedGame(game);
     setIsModalOpen(true);
   };
@@ -196,6 +204,13 @@ export default function FeaturedGames() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         game={selectedGame}
+      />
+
+      <AuthPromptModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        title="Sign In to Play"
+        message="Participating in lottery draws and winning prizes requires a verified account."
       />
     </section>
   );
