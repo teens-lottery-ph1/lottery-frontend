@@ -106,6 +106,22 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     }
   }, [isOpen, game]);
 
+  useEffect(() => {
+  if (bookedNumbers.length > 0) {
+    setSelectedNumbers((prev) =>
+      prev.filter((num) => !bookedNumbers.includes(num))
+    );
+  }
+}, [bookedNumbers]);
+
+
+
+useEffect(() => {
+  if (isOpen) {
+    setSelectedNumbers([]); // :broom: clear previous selection
+  }
+}, [isOpen]);
+
   if (!isOpen || !game) return null;
 
   const totalAmount = selectedNumbers.length * game.credits;
@@ -459,3 +475,4 @@ export default function PlayNowModal({ isOpen, onClose, game }: PlayNowModalProp
     </AnimatePresence>
   );
 }
+//1
