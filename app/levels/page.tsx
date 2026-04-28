@@ -1,368 +1,505 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Gamepad2, ArrowUpRight, History, Lock, Unlock, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  Gamepad2, ArrowUpRight, History, Unlock,
+  ChevronRight, CheckCircle2, Clock, Users
+} from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ================= IMPORTANT =================
 This page contains TWO systems:
-
 1. 🎮 Level Game System (NEW - dynamic, API based)
 2. 🏆 VIP Levels System (OLD - static, keep unchanged)
 DO NOT MIX BOTH
 ============================================= */
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface LevelPool {
+  id: string;
+  level: number;
+  currentUsers: number;
+  requiredUsers: number;
+  status: "filling" | "completed";
+  gameName: string;
+  entryFee: string;
+  reward: number;
+  createdAt?: string;
+}
+
+interface UserEntry {
+  id: string;
+  level: number;
+  amount: string;
+  createdAt: string;
+  status: string;
+  gameName: string;
+  poolStatus: string;
+  currentCount: number;
+  requiredCount: number;
+}
+
+// ─── Level × 4 rule ────────────────────────────────────────────────────────
+const requiredForLevel = (lvl: number) => lvl * 4;
+// L1=4  L2=8  L3=12  L4=16  L5=20  L6=24  L7=28  L8=32  L9=36  L10=40
+
 export default function LevelsPage() {
-  const router = useRouter();
-  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const BASE_URL     = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
 
-  const [games, setGames] = useState<any[]>([]);
+  const [games,        setGames]        = useState<any[]>([]);
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
-  const [wallet, setWallet] = useState({ available: 0, locked: 0 });
-  const [gameLevels, setGameLevels] = useState<any[]>([]);
-  const [userEntries, setUserEntries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [wallet,       setWallet]       = useState({ available: 0, locked: 0 });
+  const [gameLevels,   setGameLevels]   = useState<LevelPool[]>([]);
+  const [userEntries,  setUserEntries]  = useState<UserEntry[]>([]);
+  const [loading,      setLoading]      = useState(true);
 
-  /* ================= FETCH DATA ================= */
+  // Flash animation: track levels that just completed this session
+  const [justCompleted, setJustCompleted] = useState<Set<number>>(new Set());
+  const prevLevelsRef = useRef<LevelPool[]>([]);
 
-  useEffect(() => {
-    const fetchGames = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/level-games`, { credentials: "include" });
-        const data = await res.json();
-        const gamesList = Array.isArray(data) ? data : [];
-        setGames(gamesList);
-        if (gamesList.length > 0 && !activeGameId) {
-          setActiveGameId(gamesList[0].id);
-        }
-      } catch (err) {
-        console.error("Error fetching games:", err);
-      }
-    };
-
-    fetchGames();
+  // ─── Fetch helpers ──────────────────────────────────────────────────────────
+  const fetchJSON = useCallback(async (url: string) => {
+    try {
+      const res = await fetch(url, {
+        credentials: "include",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (!res.ok) return null;
+      if (!res.headers.get("content-type")?.includes("application/json")) return null;
+      return res.json();
+    } catch { return null; }
   }, []);
 
+  const fetchWallet  = useCallback(async () => {
+    const data = await fetchJSON(`${BASE_URL}/api/wallet`);
+    if (data && typeof data === "object") setWallet(data);
+  }, [BASE_URL, fetchJSON]);
+
+  const fetchEntries = useCallback(async () => {
+    const data = await fetchJSON(`${BASE_URL}/api/levels/my-entries`);
+    if (Array.isArray(data)) setUserEntries(data);
+  }, [BASE_URL, fetchJSON]);
+
+  const fetchLevels  = useCallback(async (gameId: string) => {
+    const data = await fetchJSON(`${BASE_URL}/api/levels?levelGameId=${gameId}`);
+    if (!Array.isArray(data)) return;
+
+    const incoming: LevelPool[] = data;
+
+    // Detect newly completed levels → trigger green flash
+    const prev = prevLevelsRef.current;
+    const newlyDone = new Set<number>();
+    incoming.forEach(pool => {
+      if (pool.status !== "completed") return;
+      const lvl = Number(pool.level);
+      const wasAlreadyCompleted = prev.some(p => Number(p.level) === lvl && p.status === "completed");
+      if (!wasAlreadyCompleted) newlyDone.add(lvl);
+    });
+
+    if (newlyDone.size > 0) {
+      setJustCompleted(prev => new Set([...prev, ...newlyDone]));
+      setTimeout(() => {
+        setJustCompleted(prev => {
+          const next = new Set(prev);
+          newlyDone.forEach(l => next.delete(l));
+          return next;
+        });
+      }, 3500);
+    }
+
+    prevLevelsRef.current = incoming;
+    setGameLevels(incoming);
+  }, [BASE_URL, fetchJSON]);
+
+  // ─── Load game list on mount ────────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      const data = await fetchJSON(`${BASE_URL}/api/level-games`);
+      const list = Array.isArray(data) ? data : [];
+      setGames(list);
+      if (list.length > 0) setActiveGameId(String(list[0].id));
+    })();
+  }, [BASE_URL, fetchJSON]);
+
+  // ─── Poll every 3 s ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!activeGameId) return;
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const fetchJSON = async (url: string) => {
-          const res = await fetch(url, { credentials: "include" });
-          if (!res.ok) {
-            console.warn(`API responded with ${res.status}: ${url}`);
-            return null;
-          }
-          const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            console.warn(`API did not return JSON: ${url}`);
-            return null;
-          }
-          return res.json();
-        };
+    const refresh = () => Promise.all([
+      fetchLevels(activeGameId),
+      fetchEntries(),
+      fetchWallet(),
+    ]);
 
-        // 1. Get levels (pools)
-        const levelsData = await fetchJSON(`${BASE_URL}/api/levels?levelGameId=${activeGameId}`);
-        if (levelsData) setGameLevels(Array.isArray(levelsData) ? levelsData : []);
+    setLoading(true);
+    refresh().finally(() => setLoading(false));
 
-        // 2. Get user entries
-        const entriesData = await fetchJSON(`${BASE_URL}/api/levels/my-entries?levelGameId=${activeGameId}`);
-        if (entriesData) setUserEntries(Array.isArray(entriesData) ? entriesData : []);
+    const timer = setInterval(refresh, 3000);
+    return () => clearInterval(timer);
+  }, [activeGameId, fetchLevels, fetchEntries, fetchWallet]);
 
-        // 3. Get wallet
-        const walletData = await fetchJSON(`${BASE_URL}/api/wallet`);
-        if (walletData && typeof walletData === "object") {
-          setWallet(walletData);
-        }
-      } catch (err) {
-        console.error("Error fetching level data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // ─── Re-sync after returning from wallet page ───────────────────────────────
+  useEffect(() => {
+    if (searchParams?.get("from") === "level-game" && activeGameId) {
+      fetchLevels(activeGameId);
+      fetchEntries();
+      fetchWallet();
+    }
+  }, [searchParams, activeGameId, fetchLevels, fetchEntries, fetchWallet]);
 
-    fetchData();
-  }, [activeGameId]);
-
-  /* ================= ACTIONS ================= */
-
-  /**
-   * Check if a level is unlocked based on progression logic.
-   * Standard logic: Level L is unlocked if L-2 is completed.
-   * Special case: If admin has created a pool for a level but skipped intermediate ones (like L-2), 
-   * we unlock it so it correctly reflects as joinable on the user screen.
-   */
-  const isLevelUnlocked = (levelNum: number, currentPool?: any) => {
-    // All levels unlocked unconditionally as per requirements (No progression blocking)
-    return true;
-
-    /* 
-    =================================================
-    OLD PROGRESSION LOGIC (Commented out as requested)
-    =================================================
-    
-    // Basic progression: Levels 1 and 2 are always joinable for new players
-    if (levelNum <= 2) return true;
-
-    const validLevels = Array.isArray(gameLevels) ? gameLevels : [];
-    const validEntries = Array.isArray(userEntries) ? userEntries : [];
-    
-    // N+2 Logic: Level L is unlocked if L-2 is completed
-    const prevPool = validLevels.find(p => Number(p.level) === levelNum - 2);
-    
-    // Check if the required previous level was completed in a pool or recorded in user entries
-    const isPrevPoolCompleted = prevPool ? prevPool.status === 'completed' : false;
-    const hasCompletedPrevEntry = validEntries.some(e => Number(e.level) === levelNum - 2 && e.status === 'paid' &&
-      (e.levelGameId === activeGameId || e.gameId === activeGameId || (!e.levelGameId && !e.gameId))
-    );
-    
-    if (isPrevPoolCompleted || hasCompletedPrevEntry) return true;
-
-    // AUTO-UNLOCK FOR SKIPPED LEVELS:
-    // If the admin has explicitly created a pool for this level (e.g. Level 4) 
-    // but NO pool exists for Level 2 (skipped creation), we unlock it.
-    // This ensures manually initialized high levels are playable.
-    if (currentPool && !prevPool) return true;
-    
-    return false;
-    */
-  };
-
-  /**
-   * Action: Join a level pool.
-   * This navigates the user to the wallet/payment page with the fixed fee.
-   * 
-   * @param poolId - The unique ID of the pool in the database.
-   * @param fee - The fixed entry fee for this game.
-   */
-  const handleJoinLevel = async (poolId: string, fee: number) => {
-    // We pass the fee as an 'amount' parameter to the wallets page.
-    // The wallets page will handle the actual wallet deduction or payment.
+  // ─── Actions ────────────────────────────────────────────────────────────────
+  const handleJoin = (poolId: string, fee: number) =>
     router.push(`/wallets?amount=${fee}&poolId=${poolId}&from=level-game`);
-  };
 
   const handleWithdraw = async () => {
     if (wallet.available <= 0) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/withdraw`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res  = await fetch(`${BASE_URL}/api/withdraw`, {
+        method:      "POST",
+        headers:     { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ amount: wallet.available }),
+        body:        JSON.stringify({ amount: wallet.available }),
       });
       const data = await res.json();
-      if (data.success) {
-        alert("Withdrawal successful!");
-        window.location.reload(); 
-      }
-    } catch (err) {
-      console.error("Withdraw Error:", err);
-    }
+      if (data.success) { alert("Withdrawal successful!"); window.location.reload(); }
+    } catch (e) { console.error(e); }
   };
 
-  /* ================= UI ================= */
+  // ─── Per-level display state ────────────────────────────────────────────────
+  const activeGame = games.find(g => String(g.id) === activeGameId);
+  const baseFee    = activeGame?.entryFee ? Number(activeGame.entryFee) : 100;
+  const reward     = baseFee * 2;
 
+  /**
+   * ✅ FIXED STATE LOGIC
+   *
+   * Backend now deduplicates pools — only ONE pool per level is returned.
+   * completed pool → always shows required count (never 0)
+   * filling pool   → shows live count
+   */
+  const getLevelState = (lvlNum: number) => {
+    const required = requiredForLevel(lvlNum);
+
+    const allPools      = gameLevels.filter(p => Number(p.level) === lvlNum);
+    const completedPool = allPools.find(p => p.status === "completed") ?? null;
+    const fillingPool   = allPools.find(p => p.status === "filling")   ?? null;
+
+    // ✅ COMPLETED: if any completed pool exists → always COMPLETED, never goes back
+    const isCompleted = !!completedPool;
+
+    // ✅ FIX: completed always shows full count
+    const currentUsers = isCompleted
+      ? required
+      : (fillingPool?.currentUsers ?? 0);
+
+    const fillPct = isCompleted
+      ? 100
+      : Math.min((currentUsers / required) * 100, 100);
+
+    // ✅ ALL levels are always OPEN — no pending, no lock
+    // user can join any level anytime, completes when members fill up
+    const isOpen = !isCompleted;
+
+    return {
+      pool:      fillingPool ?? completedPool,
+      required,
+      currentUsers,
+      fillPct,
+      isCompleted,
+      isOpen,
+      isPending: false,
+      flashNow:  justCompleted.has(lvlNum),
+    };
+  };
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="py-8 bg-black text-white min-h-screen">
       <div className="container px-4">
-        {/* ================= LEVEL GAME SECTION ================= */}
 
+        {/* ══════════════ LEVEL GAME ══════════════ */}
         <div className="mb-16 space-y-8">
-          {/* HEADER + WALLET */}
-          <div className="flex flex-col md:flex-row justify-between gap-6">
+
+          {/* Header + Wallet */}
+          <div className="flex flex-col md:flex-row justify-between gap-6 items-start">
             <div className="flex items-center gap-3">
-              <Gamepad2 className="w-8 h-8 text-yellow-500" />
+              <Gamepad2 className="w-9 h-9 text-yellow-500" />
               <div>
-                <h1 className="text-3xl font-bold">Level Game</h1>
-                <p className="text-gray-400 text-sm">Join pools and earn rewards</p>
+                <h1 className="text-3xl font-black">Level Game</h1>
+                <p className="text-gray-400 text-sm mt-0.5">Join pools • Earn rewards • Live updates</p>
               </div>
             </div>
 
-            {/* WALLET */}
-            <div className="flex gap-4 p-4 bg-gray-900 rounded-xl">
+            <div className="flex gap-5 p-4 bg-gray-900 rounded-2xl border border-gray-800 items-center">
               <div>
-                <p className="text-xs text-gray-500">Available</p>
-                <p className="text-green-400 font-bold">₹{wallet.available}</p>
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Available</p>
+                <p className="text-green-400 font-black text-xl">₹{wallet.available}</p>
               </div>
-
+              <div className="w-px h-8 bg-gray-700" />
               <div>
-                <p className="text-xs text-gray-500">Locked</p>
-                <p className="text-gray-400 font-bold">₹{wallet.locked}</p>
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Locked</p>
+                <p className="text-gray-400 font-black text-xl">₹{wallet.locked}</p>
               </div>
-
               <button
                 onClick={handleWithdraw}
                 disabled={wallet.available <= 0}
-                className={`px-3 py-1 rounded text-black flex items-center gap-1 ${wallet.available > 0 ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-600 cursor-not-allowed'}`}
+                className={`px-4 py-2 rounded-xl text-black font-black flex items-center gap-1.5 text-sm ${
+                  wallet.available > 0
+                    ? "bg-yellow-500 hover:bg-yellow-400 active:scale-95 transition-transform"
+                    : "bg-gray-700 text-gray-500 cursor-not-allowed"
+                }`}
               >
                 Withdraw <ArrowUpRight size={14} />
               </button>
             </div>
           </div>
 
-          {/* ================= GAME SELECTOR (DYNAMIC) ================= */}
+          {/* Game tabs */}
+          {games.length > 0 && (
+            <div className="flex flex-wrap gap-2 bg-gray-900/60 border border-gray-800 p-1.5 rounded-2xl w-fit">
+              {games.map(g => (
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGameId(String(g.id))}
+                  className={`px-5 py-2 rounded-xl font-bold text-sm transition-all ${
+                    activeGameId === String(g.id)
+                      ? "bg-yellow-500 text-black shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div className="flex flex-wrap gap-2 bg-gray-900 p-1 rounded-xl w-fit">
-            {Array.isArray(games) && games.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setActiveGameId(g.id)}
-                className={`px-4 py-2 rounded ${
-                  activeGameId === g.id ? "bg-yellow-500 text-black" : "text-gray-400"
-                }`}
-              >
-                {g.name}
-              </button>
-            ))}
-          </div>
-
-          {/* ================= LEVELS GRID ================= */}
-
+          {/* ══════════ LEVELS GRID ══════════ */}
           {loading ? (
-            <p className="text-gray-500">Loading levels...</p>
+            <div className="flex items-center gap-3 text-gray-500 py-16 justify-center">
+              <Clock className="animate-spin text-yellow-500" size={22} />
+              <span className="text-gray-400 font-semibold">Loading levels...</span>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {/* 
-                  RENDER LOOP: We show 10 potential levels.
-                  If a level exists in the database (g), we use its data (progress/ID).
-                  If it doesn't exist, we show it as a grayed-out placeholder.
-              */}
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((lvlNum) => {
-                // 1. Try to find the active pool for this level in the API state
-                const validLevels = Array.isArray(gameLevels) ? gameLevels : [];
-                const g = validLevels.find(p => Number(p.level) === lvlNum);
-                
-                // 2. Determine if the level is joinable based on our unlock logic
-                const unlocked = isLevelUnlocked(lvlNum, g);
-                
-                /* ================= NEW FINANCIAL MODEL (FIXED FEE) ================= */
-                // RULE 1: Entry fee is now FIXED. It's the same for Level 1 as it is for Level 10.
-                // We find the base fee from the currently active game's configuration.
-                const activeGame = games.find(game => game.id === activeGameId);
-                const baseFee = activeGame?.entryFee ? Number(activeGame.entryFee) : 100;
-                
-                // We ignore any level-based scaling. Every level simply costs the baseFee.
-                const entryFee = baseFee; 
-
-                // RULE 2: Reward is strictly 2x the entry fee for ALL levels.
-                // This simplifies the UI and makes it clear what the player wins.
-                const reward = entryFee * 2;
-                
-                /* ================= OTHER DATA ================= */
-                const currentUsers = g?.currentUsers || 0;
-                // Required users still scale with level (L*4) to make higher levels harder to fill
-                const requiredUsers = g?.requiredUsers || (lvlNum * 4); 
-                const id = g?.id || `placeholder-${lvlNum}`;
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }, (_, i) => i + 1).map(lvlNum => {
+                const {
+                  pool, required, currentUsers, fillPct,
+                  isCompleted, isOpen, isPending, flashNow,
+                } = getLevelState(lvlNum);
 
                 return (
                   <motion.div
                     key={lvlNum}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: lvlNum * 0.05 }}
-                    className={`relative p-5 rounded-2xl border transition-all ${
-                      unlocked 
-                        ? "bg-gray-900/50 border-gray-800 hover:border-yellow-500/50" 
-                        : "bg-gray-900/10 border-gray-700/30 opacity-60 grayscale"
+                    transition={{ delay: lvlNum * 0.04, duration: 0.3 }}
+                    className={`relative p-4 rounded-2xl border transition-all duration-500 ${
+                      isCompleted
+                        ? flashNow
+                          ? "bg-green-900/70 border-green-400 shadow-[0_0_28px_rgba(74,222,128,0.55)]"
+                          : "bg-green-950/40 border-green-800/60"
+                        : isOpen
+                          ? "bg-gray-900/70 border-gray-700 hover:border-yellow-500/50"
+                          : "bg-gray-900/15 border-gray-800/30 opacity-40 pointer-events-none"
                     }`}
                   >
-                    {!unlocked && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] rounded-2xl z-10 p-4 text-center">
-                        <Lock className="text-gray-500 mb-2" size={32} />
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Locked</p>
-                        <p className="text-[9px] text-gray-500">Complete Level {lvlNum - 2} to unlock</p>
-                      </div>
-                    )}
 
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="font-bold text-gray-400">Level {lvlNum}</h3>
-                      {unlocked ? (
-                        <Unlock size={14} className="text-green-500" />
-                      ) : (
-                        <Lock size={14} className="text-red-500" />
+                    {/* COMPLETED badge */}
+                    <AnimatePresence>
+                      {isCompleted && (
+                        <motion.div
+                          key="cbadge"
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                          className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap"
+                        >
+                          <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest bg-green-500 text-black px-2.5 py-0.5 rounded-full shadow-lg">
+                            <CheckCircle2 size={9} /> COMPLETED
+                          </span>
+                        </motion.div>
                       )}
+                    </AnimatePresence>
+
+                    {/* Level number + status icon */}
+                    <div className="flex justify-between items-center mb-3 mt-1">
+                      <span className={`font-black text-sm ${
+                        isCompleted ? "text-green-400" : isOpen ? "text-white" : "text-gray-600"
+                      }`}>
+                        Level {lvlNum}
+                      </span>
+                      {isCompleted
+                        ? <CheckCircle2 size={14} className="text-green-500" />
+                        : isOpen
+                          ? <Unlock size={13} className="text-yellow-400" />
+                          : <Clock size={13} className="text-gray-600" />
+                      }
                     </div>
-                    <div className="mb-4">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Progress</p>
-                      <div className="flex justify-between items-end mb-1">
-                        <span className="text-xl font-black text-white">{currentUsers}/{requiredUsers}</span>
+
+                    {/* Progress */}
+                    <div className="mb-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`text-xl font-black leading-none ${
+                          isCompleted ? "text-green-400" : "text-white"
+                        }`}>
+                          {currentUsers}
+                          <span className="text-gray-600 text-sm font-bold">/{required}</span>
+                        </span>
+
+                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full ${
+                          isCompleted
+                            ? "bg-green-900 text-green-400"
+                            : isOpen
+                              ? "bg-yellow-900/80 text-yellow-400"
+                              : "bg-gray-800 text-gray-500"
+                        }`}>
+                          {isCompleted ? "FULL" : isOpen ? "OPEN" : "PENDING"}
+                        </span>
                       </div>
+
+                      {/* Animated progress bar */}
                       <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]"
-                          style={{ width: `${(currentUsers / requiredUsers) * 100}%` }}
+                        <motion.div
+                          className={`h-full rounded-full ${
+                            isCompleted
+                              ? "bg-green-500 shadow-[0_0_6px_rgba(74,222,128,0.6)]"
+                              : "bg-yellow-500 shadow-[0_0_6px_rgba(234,179,8,0.5)]"
+                          }`}
+                          initial={false}
+                          animate={{ width: `${fillPct}%` }}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
                         />
                       </div>
                     </div>
-                    <div className="mb-6">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Reward</p>
-                      <p className="text-2xl font-black text-yellow-500">₹{reward}</p>
+
+                    {/* Members info */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <Users size={10} className="text-gray-600" />
+                      <span className="text-[10px] text-gray-500 font-semibold">{required} members</span>
                     </div>
+
+                    {/* Reward */}
+                    <div className="mb-4">
+                      <p className="text-[9px] text-gray-600 uppercase font-bold mb-0.5">Reward</p>
+                      <p className={`text-xl font-black ${
+                        isCompleted ? "text-green-400" : "text-yellow-500"
+                      }`}>
+                        ₹{reward}
+                      </p>
+                    </div>
+
+                    {/* CTA button */}
                     <button
-                      disabled={!unlocked}
+                      disabled={isCompleted || isPending}
                       onClick={() => {
-                        // If there is no active pool, pass the needed info as a pseudo ID so backend knows what to create
-                        // We use the existing game ID and requested level to form the pool ID request payload
-                        const joinId = g?.id || `placeholder-${activeGameId}-${lvlNum}`;
-                        handleJoinLevel(joinId, entryFee);
+                        if (isOpen) {
+                          const joinId = pool?.id || `placeholder-${activeGameId}-${lvlNum}`;
+                          handleJoin(joinId, baseFee);
+                        }
                       }}
-                      className={`w-full font-bold py-2 rounded transition-colors flex items-center justify-center gap-2 ${
-                        unlocked
-                          ? "bg-white text-black hover:bg-yellow-500" 
-                          : "bg-gray-800 text-gray-500 cursor-not-allowed"
+                      className={`w-full font-black py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 ${
+                        isCompleted
+                          ? "bg-green-900/40 text-green-500 cursor-not-allowed border border-green-800/40"
+                          : isOpen
+                            ? "bg-white text-black hover:bg-yellow-400 active:scale-95"
+                            : "bg-gray-800/50 text-gray-600 cursor-not-allowed"
                       }`}
                     >
-                      {unlocked ? "JOIN" : "LOCKED"}
-                      {unlocked && <ChevronRight size={16} />}
+                      {isCompleted ? (
+                        <><CheckCircle2 size={13} /> COMPLETED</>
+                      ) : isOpen ? (
+                        <>JOIN <ChevronRight size={13} /></>
+                      ) : (
+                        "PENDING"
+                      )}
                     </button>
                   </motion.div>
                 );
               })}
             </div>
           )}
-          
 
-          {/* ================= USER ENTRIES ================= */}
-
-          <div className="bg-gray-900 p-6 rounded-xl">
-            <h2 className="font-bold flex items-center gap-2 mb-4 text-xl">
-              <History size={18} className="text-yellow-500" /> My Entries
+          {/* ══════════ MY ENTRIES ══════════ */}
+          <div className="bg-gray-900/60 border border-gray-800 p-6 rounded-2xl">
+            <h2 className="font-black flex items-center gap-2 mb-5 text-xl">
+              <History size={18} className="text-yellow-500" />
+              My Entries
+              {userEntries.length > 0 && (
+                <span className="text-xs bg-yellow-500 text-black font-black px-2 py-0.5 rounded-full">
+                  {userEntries.length}
+                </span>
+              )}
             </h2>
 
-            {(!Array.isArray(userEntries) || userEntries.length === 0) ? (
-              <p className="text-gray-500 text-sm">No entries yet.</p>
+            {userEntries.length === 0 ? (
+              <p className="text-gray-500 text-sm">No entries yet. Join a level to get started!</p>
             ) : (
-              <div className="space-y-3">
-                {userEntries.map((e: any) => (
-                  <div
-                    key={e.id}
-                    className="flex justify-between p-3 bg-black/50 rounded-lg border border-gray-800"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-gray-300">
-                        <span className="text-yellow-500 font-bold uppercase mr-1">
-                          {e.gameName || "Level Game"}
+              <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                {userEntries.map(e => {
+                  const done    = e.poolStatus === "completed";
+                  const entryRq = requiredForLevel(e.level);
+                  // ✅ FIX: completed entries always show full count
+                  const displayCount = done ? entryRq : (e.currentCount ?? 0);
+
+                  return (
+                    <div
+                      key={e.id}
+                      className={`flex justify-between p-3 rounded-xl border ${
+                        done ? "bg-green-950/30 border-green-800/40" : "bg-black/40 border-gray-800"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-semibold text-gray-200">
+                          <span className="text-yellow-500 font-black uppercase mr-1">
+                            {e.gameName || "Level Game"}
+                          </span>
+                          — Level {e.level}
                         </span>
-                        (Level {e.level})
-                      </span>
+
+                        <span className={`text-[10px] font-bold uppercase tracking-wide flex items-center gap-1 ${
+                          done ? "text-green-400" : "text-yellow-400"
+                        }`}>
+                          <Users size={8} />
+                          {done ? "COMPLETED ✓" : "In Progress"} ·{" "}
+                          {displayCount}/{entryRq} players
+                        </span>
+
+                        <span className="text-[10px] text-gray-600">
+                          {new Date(e.createdAt).toLocaleString("en-IN", {
+                            day: "2-digit", month: "short", year: "numeric",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-end justify-center gap-1.5 ml-3 shrink-0">
+                        <span className="text-green-400 font-black">₹{e.amount}</span>
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg ${
+                          e.status === "paid"   ? "bg-green-900 text-green-400"   :
+                          e.status === "active" ? "bg-yellow-900 text-yellow-400" :
+                                                  "bg-gray-800 text-gray-400"
+                        }`}>
+                          {e.status}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-green-400 font-black self-center">₹{e.amount}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
+
         </div>
 
-        {/* ================= VIP SYSTEM (UNCHANGED) ================= */}
-
-        <div className="text-center text-gray-600 text-sm mt-32 border-t border-gray-900 pt-8">
+        {/* ══════════ VIP SYSTEM (UNCHANGED) ══════════ */}
+        <div className="text-center text-gray-700 text-xs mt-20 border-t border-gray-900 pt-8">
           <p>Legacy VIP System (maintained for compatibility)</p>
         </div>
+
       </div>
     </div>
   );
