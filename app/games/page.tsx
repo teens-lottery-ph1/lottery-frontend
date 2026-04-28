@@ -118,6 +118,11 @@ export default function GamesPage() {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/draws`
         );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch draws");
+        }
+
         const result = await res.json();
 
         let formattedGames: Game[] = result.data.map((item: any) => ({
@@ -256,7 +261,7 @@ export default function GamesPage() {
               </div>
 
               {/* Button */}
-              <button 
+              <button
                 onClick={() => handlePlayNow(game)}
                 className="w-full mt-6 bg-[#00FFA3] text-black py-3 rounded-xl font-semibold hover:bg-[#00FFA3]/90 transition-all hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]"
               >
@@ -269,13 +274,13 @@ export default function GamesPage() {
 
       </div>
 
-      <PlayNowModal 
+      <PlayNowModal
         isOpen={isPlayModalOpen}
         onClose={() => setIsPlayModalOpen(false)}
         game={selectedGame}
       />
 
-      <AuthPromptModal 
+      <AuthPromptModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         title="Sign In to Play"
