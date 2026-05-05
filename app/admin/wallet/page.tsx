@@ -1,346 +1,262 @@
+// 'use client';
+
+// import { useEffect, useState } from 'react';
+// import axios from 'axios';
+
+// export default function WalletPage() {
+//   const [users, setUsers] = useState<any[]>([]);
+//   const [loading, setLoading] = useState(true);
+
+//   const [stats, setStats] = useState({
+//     total: 0,
+//     avg: 0,
+//     locked: 0,
+//   });
+
+//   useEffect(() => {
+//     fetchData();
+//   }, []);
+
+//   const fetchData = async () => {
+//     try {
+//       const res = await axios.get(
+//         'http://localhost:10000/api/wallet/users-wallets'
+//       );
+
+//       console.log("API DATA:", res.data); // debug
+
+//       const data = res.data.data || [];
+
+//       setUsers(data);
+
+//       let total = 0;
+//       let locked = 0;
+
+//       data.forEach((u: any) => {
+//         total += Number(u.balance || 0);
+//         locked += Number(u.locked || 0);
+//       });
+
+//       setStats({
+//         total,
+//         avg: data.length ? total / data.length : 0,
+//         locked,
+//       });
+
+//     } catch (err) {
+//       console.error("ERROR:", err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="p-6">
+//       <h1 className="text-2xl font-bold mb-6">Wallet Management</h1>
+
+//       {/* 🔥 STATS */}
+//       <div className="grid grid-cols-4 gap-4 mb-6">
+//         <Card title="Total Wallet Balance" value={`₹${stats.total}`} />
+//         <Card title="Average Balance" value={`₹${stats.avg.toFixed(2)}`} />
+//         <Card title="Transactions Today" value="--" />
+//         <Card title="Locked Prizes" value={`₹${stats.locked}`} />
+//       </div>
+
+//       {/* 🔥 TABLE */}
+//       <div className="bg-white rounded-lg shadow p-4">
+//         <h2 className="text-lg font-semibold mb-4">User Wallets</h2>
+
+//         {loading ? (
+//           <p>Loading...</p>
+//         ) : (
+//           <table className="w-full border text-center">
+//             <thead className="bg-gray-100">
+//               <tr>
+//                 <th>Name</th>
+//                 <th>Email</th>
+//                 <th>Balance</th>
+//                 <th>Locked</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {users.map((u: any) => (
+//                 <tr key={u.id} className="border-t">
+//                   <td>{u.name}</td>
+//                   <td>{u.email}</td>
+//                   <td>₹{u.balance}</td>
+//                   <td>₹{u.locked}</td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+// // Card component
+// function Card({ title, value }: any) {
+//   return (
+//     <div className="bg-white shadow rounded-lg p-4 text-center">
+//       <h3 className="text-gray-500">{title}</h3>
+//       <p className="text-xl font-bold mt-2">{value}</p>
+//     </div>
+//   );
+// }
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import StatCard from '../_components/StatCard';
-import Badge from '../_components/Badge';
-import Avatar from '../_components/Avatar';
-
-// Format currency to Indian format
-const formatINR = (value: number) => {
-  return value.toLocaleString('en-IN');
-};
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function WalletPage() {
-  const [walletsList, setWalletsList] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adjustmentOpen, setAdjustmentOpen] = useState(false);
-  const [selectedUserWallet, setSelectedUserWallet] = useState<any | null>(null);
-  const [adjustmentForm, setAdjustmentForm] = useState({
-    amount: '',
-    type: 'Add',
-    reason: 'Bonus Award',
-    note: '',
+
+  const [stats, setStats] = useState({
+    total: 0,
+    avg: 0,
+    locked: 0,
   });
 
-  const fetchWallets = async () => {
+  useEffect(() => {
+    fetchData();
+
+    // ✅ auto refresh every 3 sec (fix wallet delay issue)
+    const interval = setInterval(fetchData, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchData = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/wallets`, {
-        credentials: "include"
+      const res = await axios.get(
+        'http://localhost:10000/api/wallet/users-wallets',
+        {
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        }
+      );
+
+      console.log("API RESPONSE:", res.data); // 🔍 debug
+
+      const data = res.data?.data || [];
+
+      setUsers(data);
+
+      let total = 0;
+      let locked = 0;
+
+      data.forEach((u: any) => {
+        total += Number(u.balance || 0);
+        locked += Number(u.locked || 0);
       });
-      const data = await res.json();
-      if (data.success) {
-        setWalletsList(data.wallets || []);
-      }
-    } catch (error) {
-      console.error('Error fetching wallets:', error);
+
+      setStats({
+        total,
+        avg: data.length ? total / data.length : 0,
+        locked,
+      });
+
+    } catch (err) {
+      console.error("FETCH ERROR:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchWallets();
-  }, []);
-
-  const totalBalance = walletsList.reduce((sum, w) => sum + Number(w.balance || 0), 0);
-  const avgBalance = walletsList.length ? totalBalance / walletsList.length : 0;
-  const txnToday = walletsList.length; // Placeholder for real transactions stats
-  const lockedPrizes = walletsList.reduce((sum, w) => sum + Number(w.locked || 0), 0);
-
-  const handleOpenAdjustment = (user: any) => {
-    setSelectedUserWallet(user);
-    setAdjustmentOpen(true);
-  };
-
-  const handleCloseAdjustment = () => {
-    setAdjustmentOpen(false);
-    setSelectedUserWallet(null);
-    setAdjustmentForm({
-      amount: '',
-      type: 'Add',
-      reason: 'Bonus Award',
-      note: '',
-    });
-  };
-
-  const handleSubmitAdjustment = async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/wallet/adjust`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          userId: selectedUserWallet?.userId,
-          amount: Number(adjustmentForm.amount),
-          type: adjustmentForm.type.toLowerCase(), // 'add' or 'deduct'
-          reason: adjustmentForm.reason,
-          note: adjustmentForm.note
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("Wallet adjusted successfully!");
-        fetchWallets();
-        handleCloseAdjustment();
-      } else {
-        alert(data.message || "Failed to adjust wallet");
-      }
-    } catch (error) {
-      console.error("Adjustment error:", error);
-      alert("Error processing adjustment");
-    }
-  };
-
   return (
-    <div className="space-y-8">
-      {/* STAT CARDS */}
-      <div className="grid grid-cols-4 gap-6">
-        <StatCard
-          icon="👛"
-          value={`₹${formatINR(totalBalance)}`}
-          label="Total Wallet Balance"
-          accentColor="#d97706"
+    <div className="p-6 bg-gray-50 min-h-screen">
+      
+      <h1 className="text-2xl font-semibold mb-6 text-gray-800">
+        Wallet Management
+      </h1>
+
+      {/* 🔥 CARDS */}
+      <div className="grid grid-cols-4 gap-6 mb-8">
+
+        <Card
+          title="Total Wallet Balance"
+          value={`₹${stats.total}`}
+          color="text-orange-500"
         />
-        <StatCard
-          icon="📊"
-          value={`₹${formatINR(avgBalance)}`}
-          label="Average Balance"
-          accentColor="#1e40af"
+
+        <Card
+          title="Average Balance"
+          value={`₹${stats.avg.toFixed(2)}`}
+          color="text-blue-500"
         />
-        <StatCard
-          icon="💫"
-          value={txnToday}
-          label="Transactions Today"
-          accentColor="#16a34a"
+
+        <Card
+          title="Transactions Today"
+          value="0"
+          color="text-green-500"
         />
-        <StatCard
-          icon="🔒"
-          value={`₹${formatINR(lockedPrizes)}`}
-          label="Locked Prizes"
-          accentColor="#dc2626"
+
+        <Card
+          title="Locked Prizes"
+          value={`₹${stats.locked}`}
+          color="text-red-500"
         />
+
       </div>
 
-      {/* WALLET TABLE + ADJUSTMENT PANEL */}
-      <div className="grid grid-cols-[1fr_350px] gap-6">
-        {/* WALLET TABLE */}
-        <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6">
-          <h3 className="text-[18px] font-bold text-[#111827] mb-6">
-            User Wallets
-          </h3>
+      {/* 🔥 TABLE */}
+      <div className="bg-white rounded-xl shadow-md p-6">
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b border-[#e5e7eb]">
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Balance
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Bonus
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Locked
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Last Txn
-                  </th>
-                  <th className="py-3 px-4 text-left text-[11px] font-semibold text-[#6b7280] uppercase tracking-wider">
-                    Actions
-                  </th>
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          User Wallets
+        </h2>
+
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <table className="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr className="border-b text-gray-500">
+                <th className="py-3">USER</th>
+                <th className="py-3">EMAIL</th>
+                <th className="py-3">BALANCE</th>
+                <th className="py-3">LOCKED</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {users.map((u: any) => (
+                <tr key={u.id} className="border-b hover:bg-gray-50">
+                  <td className="py-3 font-medium text-gray-800">
+                    {u.name}
+                  </td>
+                  <td className="py-3 text-gray-600">
+                    {u.email}
+                  </td>
+                  <td className="py-3 text-blue-600 font-semibold">
+                    ₹{Number(u.balance).toFixed(2)}
+                  </td>
+                  <td className="py-3 text-red-500 font-semibold">
+                    ₹{Number(u.locked).toFixed(2)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-400">Loading wallets...</td></tr>
-                ) : walletsList.map((user) => (
-                  <tr
-                    key={user.userId}
-                    className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <Avatar name={user.userName} size="sm" />
-                        <p className="text-[#111827] font-semibold">
-                          {user.userName}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-[#00d68f]">
-                      ₹{formatINR(Number(user.balance))}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-[#f5c518]">
-                      ₹{formatINR(Number(user.bonus || 0))}
-                    </td>
-                    <td className="py-3 px-4 text-[#ff4d6d]">
-                      ₹{formatINR(Number(user.locked || 0))}
-                    </td>
-                    <td className="py-3 px-4 text-[#4b5563]">
-                      {new Date(user.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleOpenAdjustment(user)}
-                          className="bg-[rgba(0,214,143,0.12)] text-[#00d68f] border border-[rgba(0,214,143,0.2)] px-2 py-1 rounded-lg hover:bg-[rgba(0,214,143,0.2)] text-[11px] font-semibold transition-colors"
-                        >
-                          ➕
-                        </button>
-                        <button
-                          onClick={() => handleOpenAdjustment(user)}
-                          className="bg-[rgba(255,77,109,0.12)] text-[#ff4d6d] border border-[rgba(255,77,109,0.2)] px-2 py-1 rounded-lg hover:bg-[rgba(255,77,109,0.2)] text-[11px] font-semibold transition-colors"
-                        >
-                          ➖
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* MANUAL ADJUSTMENT PANEL */}
-        {adjustmentOpen && selectedUserWallet && (
-          <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 h-fit sticky top-20">
-            <h3 className="text-[16px] font-bold text-[#111827] mb-4">
-              Manual Adjustment
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  User
-                </label>
-                <p className="bg-[#f3f4f6] rounded-lg px-3 py-2 text-[#111827]">
-                  {selectedUserWallet.userName}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  value={adjustmentForm.amount}
-                  onChange={(e) =>
-                    setAdjustmentForm((prev) => ({
-                      ...prev,
-                      amount: e.target.value,
-                    }))
-                  }
-                  placeholder="0"
-                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Type
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      setAdjustmentForm((prev) => ({
-                        ...prev,
-                        type: 'Add',
-                      }))
-                    }
-                    className={`flex-1 py-2 rounded-lg text-[12px] font-semibold transition-colors ${
-                      adjustmentForm.type === 'Add'
-                        ? 'bg-[#f5c518] text-black'
-                        : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563]'
-                    }`}
-                  >
-                    Add Funds
-                  </button>
-                  <button
-                    onClick={() =>
-                      setAdjustmentForm((prev) => ({
-                        ...prev,
-                        type: 'Deduct',
-                      }))
-                    }
-                    className={`flex-1 py-2 rounded-lg text-[12px] font-semibold transition-colors ${
-                      adjustmentForm.type === 'Deduct'
-                        ? 'bg-[#f5c518] text-black'
-                        : 'bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563]'
-                    }`}
-                  >
-                    Deduct
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Reason
-                </label>
-                <select
-                  value={adjustmentForm.reason}
-                  onChange={(e) =>
-                    setAdjustmentForm((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#4b5563] text-[13px] outline-none focus:border-[#d97706] transition-colors"
-                >
-                  <option>Bonus Award</option>
-                  <option>Contest Winner</option>
-                  <option>Refund</option>
-                  <option>Correction</option>
-                  <option>Penalty</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-semibold text-[#4b5563] mb-2">
-                  Note
-                </label>
-                <textarea
-                  value={adjustmentForm.note}
-                  onChange={(e) =>
-                    setAdjustmentForm((prev) => ({
-                      ...prev,
-                      note: e.target.value,
-                    }))
-                  }
-                  placeholder="Admin note..."
-                  rows={3}
-                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#111827] text-[13px] outline-none focus:border-[#d97706] transition-colors placeholder:text-[#6b7280] resize-none"
-                />
-              </div>
-
-              <div className="bg-[rgba(255,77,109,0.12)] border border-[rgba(255,77,109,0.2)] rounded-lg p-3 text-[12px] text-[#ff4d6d]">
-                ⚠️ This action will be logged in the audit trail
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSubmitAdjustment}
-                  className="flex-1 bg-[#f5c518] text-black font-bold px-3 py-2 rounded-lg hover:bg-[#e6a800] transition-colors text-[13px]"
-                >
-                  Apply 💰
-                </button>
-                <button
-                  onClick={handleCloseAdjustment}
-                  className="flex-1 bg-[#f9fafb] border border-[#e5e7eb] text-[#4b5563] px-3 py-2 rounded-lg hover:border-[rgba(255,255,255,0.15)] transition-colors text-[13px]"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
+    </div>
+  );
+}
+
+
+// 🔹 CARD COMPONENT
+function Card({ title, value, color }: any) {
+  return (
+    <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center justify-center">
+      <p className="text-sm text-gray-500 mb-2">{title}</p>
+      <h2 className={`text-2xl font-bold ${color}`}>
+        {value}
+      </h2>
     </div>
   );
 }
