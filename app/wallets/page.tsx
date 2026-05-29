@@ -20,63 +20,17 @@ import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import AuthPromptModal from "@/app/components/modals/AuthPromptModal";
+import TransactionTable from "@/app/components/TransactionTable";
+import { useSocket } from "@/app/components/SocketProvider";
 
-const transactions = [
-  {
-    title: "Deposit via UPI",
-    date: "Feb 22, 2026",
-    amount: "+$100.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Mega Millions Ticket",
-    date: "Feb 22, 2026",
-    amount: "-$10.00",
-    status: "completed",
-    type: "debit",
-  },
-  {
-    title: "Lucky 7 — Won!",
-    date: "Feb 20, 2026",
-    amount: "+$500.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Power Ball Ticket x3",
-    date: "Feb 19, 2026",
-    amount: "-$30.00",
-    status: "completed",
-    type: "debit",
-  },
-  {
-    title: "Referral Bonus — James",
-    date: "Feb 18, 2026",
-    amount: "+$20.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Deposit via Card",
-    date: "Feb 15, 2026",
-    amount: "+$200.00",
-    status: "completed",
-    type: "credit",
-  },
-  {
-    title: "Withdrawal to Bank",
-    date: "Feb 14, 2026",
-    amount: "-$300.00",
-    status: "pending",
-    type: "debit",
-  },
-]; function WalletContent() {
+ function WalletContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const amount = searchParams.get("amount");
   const poolId = searchParams.get("poolId");
   const from = searchParams.get("from");
+
+  const { socket } = useSocket();
 
   const [wallet, setWallet] = useState({ available: 0, locked: 0 });
   const [isPaying, setIsPaying] = useState(false);
@@ -85,6 +39,7 @@ const transactions = [
   const [isProcessingAdd, setIsProcessingAdd] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [txns, setTxns] = useState<any[]>([]);
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
 
   // Load Razorpay script dynamically
@@ -105,6 +60,14 @@ const transactions = [
         const data = await res.json();
         if (data && data.success) {
           setWallet(data);
+        }
+
+        const txRes = await fetch(`${BASE_URL}/api/wallet/transactions`, {
+          credentials: "include"
+        });
+        const txData = await txRes.json();
+        if (txData && txData.success) {
+          setTxns(txData.transactions || []);
         }
       } catch (err) {
         console.error("Wallet fetch error:", err);
@@ -169,6 +132,10 @@ const transactions = [
         }),
       });
       const orderData = await orderRes.json();
+      
+      if (!orderRes.ok || !orderData.id) {
+        throw new Error(orderData.error || "Failed to create payment order from server (Likely missing Razorpay Secret Key in backend).");
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -179,6 +146,42 @@ const transactions = [
         order_id: orderData.id,
         handler: async (response: any) => {
           try {
+            setIsAddMoneyOpen(false);
+            setIsPolling(true);
+
+            // Register the listener immediately to catch the upcoming success event
+            let socketResolved = false;
+            let socketListener: any = null;
+
+            if (socket) {
+              socketListener = (data: any) => {
+                console.log("⚡ Live payment update received on wallet page:", data);
+                if (data.status === "success" && !socketResolved) {
+                  socketResolved = true;
+                  socket.off("payment_updated", socketListener);
+                  
+                  // Instantly update wallet state
+                  setWallet(prev => ({
+                    ...prev,
+                    available: data.available
+                  }));
+                  
+                  // Instantly fetch transactions list to show in the table!
+                  fetch(`${BASE_URL}/api/wallet/transactions`, {
+                    credentials: "include"
+                  }).then(res => res.json()).then(txData => {
+                    if (txData && txData.success) {
+                      setTxns(txData.transactions || []);
+                    }
+                  }).catch(err => console.error("Failed to fetch transactions:", err));
+                  
+                  setIsPolling(false);
+                  alert(`Money added successfully! New Balance: ₹${data.available}`);
+                }
+              };
+              socket.on("payment_updated", socketListener);
+            }
+
             // Verify payment ONLY ONCE for add money.
             const verifyRes = await fetch(`${BASE_URL}/api/payments/verify`, {
               method: "POST",
@@ -194,65 +197,58 @@ const transactions = [
                 type: "Deposit"
               }),
             });
+
             if (!verifyRes.ok) {
+              if (socket && socketListener) {
+                socket.off("payment_updated", socketListener);
+              }
+              setIsPolling(false);
               const errData = await verifyRes.json().catch(() => ({}));
               throw new Error(errData.error || `Server Error during verification`);
             }
 
-            // NOTE: Wallet update is handled asynchronously by the Razorpay webhook.
-            // We poll GET /api/wallet every 2-3 seconds until the balance increases 
-            // instead of blindly updating the local state.
-            setIsAddMoneyOpen(false);
-            setIsPolling(true);
-
-            const initialBalance = wallet.available;
-            let currentBalance = initialBalance;
-            let attempts = 0;
-            const maxAttempts = 10; // Max ~25 seconds
-
-            while (currentBalance <= initialBalance && attempts < maxAttempts) {
-              await new Promise(r => setTimeout(r, 2500)); // Poll every 2.5 seconds
-              try {
-                const walletRes = await fetch(`${BASE_URL}/api/wallet`, {
-                  credentials: "include"
-                });
-                const data = await walletRes.json();
-                if (data && data.success) {
-                  currentBalance = data.available;
-                  // if (currentBalance > initialBalance) {
-                  //   setWallet(data); 
-                  //   break;
-                  // }
-                  if (currentBalance > initialBalance) {
+            // Timeout fallback: if socket hasn't fired in 10 seconds, check database manually
+            setTimeout(async () => {
+              if (!socketResolved) {
+                socketResolved = true;
+                if (socket && socketListener) {
+                  socket.off("payment_updated", socketListener);
+                }
+                
+                // Fallback manual check
+                try {
+                  const walletRes = await fetch(`${BASE_URL}/api/wallet`, {
+                    credentials: "include"
+                  });
+                  const data = await walletRes.json();
+                  if (data && data.success) {
                     setWallet(data);
-
-                    // notify navbar
                     window.dispatchEvent(
                       new CustomEvent("walletUpdated", { detail: data.available })
                     );
-
-                    break;
+                    
+                    const txRes = await fetch(`${BASE_URL}/api/wallet/transactions`, {
+                      credentials: "include"
+                    });
+                    const txData = await txRes.json();
+                    if (txData && txData.success) {
+                      setTxns(txData.transactions || []);
+                    }
+                    
+                    setIsPolling(false);
+                    alert(`Money added successfully! New Balance: ₹${data.available}`);
                   }
+                } catch (e) {
+                  setIsPolling(false);
+                  alert("Payment verified, but socket sync took too long. Please refresh.");
                 }
-              } catch (e) {
-                // Network glitch, silently ignore and let loop retry
               }
-              attempts++;
-            }
-
-            setIsPolling(false);
-            if (currentBalance > initialBalance) {
-              // Success exactly when webhook updates DB
-              alert(`Money added successfully! New Balance: ₹${currentBalance}`);
-            } else {
-              // Timeout fallback
-              alert("Payment verified, but wallet update is taking a bit longer. Please check back in a few minutes.");
-            }
+            }, 10000);
 
             setAddAmount("");
           } catch (err: any) {
             console.error("Network Error during Verification:", err);
-            alert(`Verification failed: ${err.message || 'Could not verify payment.'}`);
+            alert(`Verification failed: ${err.message || "Could not verify payment."}`);
           }
         },
         theme: { color: "#10b981" },
@@ -402,58 +398,9 @@ const transactions = [
       </div>
 
       {/* TRANSACTIONS */}
-      <div className="mt-12 bg-[#0f1613] rounded-2xl border border-[#1f2a26]">
-        <h2 className="text-xl font-semibold p-6 border-b border-[#1f2a26]">
-          Recent Transactions
-        </h2>
-
-        <div className="max-h-[420px] overflow-y-auto">
-          {transactions.map((tx, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between px-6 py-5 border-b border-[#1f2a26]"
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className={`p-2 rounded-full ${tx.type === "credit"
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-gray-500/10 text-gray-400"
-                    }`}
-                >
-                  {tx.type === "credit" ? (
-                    <ArrowDownLeft />
-                  ) : (
-                    <ArrowUpRight />
-                  )}
-                </div>
-
-                <div>
-                  <p className="font-medium">{tx.title}</p>
-                  <p className="text-sm text-gray-400">{tx.date}</p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <p
-                  className={`font-semibold ${tx.type === "credit"
-                    ? "text-emerald-400"
-                    : "text-white"
-                    }`}
-                >
-                  {tx.amount}
-                </p>
-                <p
-                  className={`text-sm ${tx.status === "pending"
-                    ? "text-yellow-400"
-                    : "text-gray-400"
-                    }`}
-                >
-                  {tx.status}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold mb-6">Transaction History</h2>
+        <TransactionTable transactions={txns} currentBalance={wallet.available} />
       </div>
 
       {/* POLLING OVERLAY */}
