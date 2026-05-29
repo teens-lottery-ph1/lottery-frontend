@@ -231,32 +231,40 @@ export default function LevelsPage() {
                   If a level exists in the database (g), we use its data (progress/ID).
                   If it doesn't exist, we show it as a grayed-out placeholder.
               */}
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((lvlNum) => {
+              {Array.from({ length: 12 }, (_, i) => i).map((lvlNum) => {
                 // 1. Try to find the active pool for this level in the API state
                 const validLevels = Array.isArray(gameLevels) ? gameLevels : [];
                 const g = validLevels.find(p => Number(p.level) === lvlNum);
+                const validEntries = Array.isArray(userEntries) ? userEntries : [];
                 
                 // 2. Determine if the level is joinable based on our unlock logic
                 const unlocked = isLevelUnlocked(lvlNum, g);
                 
-                /* ================= NEW FINANCIAL MODEL (FIXED FEE) ================= */
-                // RULE 1: Entry fee is now FIXED. It's the same for Level 1 as it is for Level 10.
-                // We find the base fee from the currently active game's configuration.
+                /* ================= NEW FINANCIAL MODEL ================= */
                 const activeGame = games.find(game => game.id === activeGameId);
                 const baseFee = activeGame?.entryFee ? Number(activeGame.entryFee) : 100;
+                const feeModel = activeGame?.feeModel || 'fixed'; // Defaults to fixed if not specified
                 
-                // We ignore any level-based scaling. Every level simply costs the baseFee.
-                const entryFee = baseFee; 
+                // Calculate entry fee based on fee model
+                const entryFee = feeModel === 'variable' ? baseFee * Math.max(1, lvlNum) : baseFee; 
 
-                // RULE 2: Reward is strictly 2x the entry fee for ALL levels.
-                // This simplifies the UI and makes it clear what the player wins.
+                // Reward is 2x the entry fee
                 const reward = entryFee * 2;
                 
                 /* ================= OTHER DATA ================= */
                 const currentUsers = g?.currentUsers || 0;
-                // Required users still scale with level (L*4) to make higher levels harder to fill
-                const requiredUsers = g?.requiredUsers || (lvlNum * 4); 
+                // Capacity = 4
+                const requiredUsers = g?.requiredUsers || 4; 
                 const id = g?.id || `placeholder-${lvlNum}`;
+
+                const isCompleted = g?.status === 'completed' || g?.is_closed || currentUsers >= requiredUsers;
+                // Backend returns status: 'active' for successfully joined entries
+                // We should also ensure the entry matches the current game. If gameId is missing, we check gameName as fallback, but ideally backend provides it.
+                const hasJoined = validEntries.some(e => 
+                  Number(e.level) === lvlNum && 
+                  (e.status === 'active' || e.status === 'paid') &&
+                  (Number(e.gameId) === Number(activeGameId) || (!e.gameId))
+                );
 
                 return (
                   <motion.div
@@ -280,11 +288,23 @@ export default function LevelsPage() {
 
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="font-bold text-gray-400">Level {lvlNum}</h3>
-                      {unlocked ? (
-                        <Unlock size={14} className="text-green-500" />
-                      ) : (
-                        <Lock size={14} className="text-red-500" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        {isCompleted && (
+                          <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-yellow-500/30">
+                            Completed
+                          </span>
+                        )}
+                        {hasJoined && (
+                          <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-green-500/30">
+                            Already Joined
+                          </span>
+                        )}
+                        {unlocked ? (
+                          <Unlock size={14} className="text-green-500" />
+                        ) : (
+                          <Lock size={14} className="text-red-500" />
+                        )}
+                      </div>
                     </div>
                     <div className="mb-4">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Progress</p>
@@ -303,21 +323,19 @@ export default function LevelsPage() {
                       <p className="text-2xl font-black text-yellow-500">₹{reward}</p>
                     </div>
                     <button
-                      disabled={!unlocked}
+                      disabled={!unlocked || isCompleted || hasJoined}
                       onClick={() => {
-                        // If there is no active pool, pass the needed info as a pseudo ID so backend knows what to create
-                        // We use the existing game ID and requested level to form the pool ID request payload
                         const joinId = g?.id || `placeholder-${activeGameId}-${lvlNum}`;
                         handleJoinLevel(joinId, entryFee);
                       }}
                       className={`w-full font-bold py-2 rounded transition-colors flex items-center justify-center gap-2 ${
-                        unlocked
+                        unlocked && !isCompleted && !hasJoined
                           ? "bg-white text-black hover:bg-yellow-500" 
                           : "bg-gray-800 text-gray-500 cursor-not-allowed"
                       }`}
                     >
-                      {unlocked ? "JOIN" : "LOCKED"}
-                      {unlocked && <ChevronRight size={16} />}
+                      {hasJoined ? "ALREADY JOINED" : isCompleted ? "COMPLETED" : !unlocked ? "LOCKED" : "JOIN"}
+                      {unlocked && !isCompleted && !hasJoined && <ChevronRight size={16} />}
                     </button>
                   </motion.div>
                 );
@@ -349,8 +367,19 @@ export default function LevelsPage() {
                         </span>
                         (Level {e.level})
                       </span>
+                      <div className="mt-1">
+                        {e.status === 'paid' ? (
+                          <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-green-500/30">
+                            Paid Out
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-blue-500/30">
+                            Active
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-green-400 font-black self-center">₹{e.amount}</span>
+                    <span className="text-green-400 font-black self-center text-lg">₹{e.amount}</span>
                   </div>
                 ))}
               </div>

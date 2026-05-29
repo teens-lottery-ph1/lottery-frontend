@@ -37,6 +37,9 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [wallet, setWallet] = useState<WalletState>({ available: 0 });
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [recentTxns, setRecentTxns] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const pathname = usePathname();
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000";
@@ -59,8 +62,8 @@ export default function Navbar() {
     }
   };
 
-  /* Fetch wallet balance */
-  const fetchWallet = async () => {
+  /* Fetch wallet balance and recent transactions */
+  const fetchWalletData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/wallet`, {
         credentials: "include",
@@ -72,22 +75,39 @@ export default function Navbar() {
           setWallet(data);
         }
       }
+
+      // Fetch recent transactions for notifications
+      if (user || localStorage.getItem("user")) {
+        const txRes = await fetch(`${BASE_URL}/api/wallet/transactions`, {
+          credentials: "include"
+        });
+        if (txRes.ok) {
+          const txData = await txRes.json();
+          if (txData?.success && txData.transactions) {
+            const latest = txData.transactions.slice(0, 5);
+            setRecentTxns(latest);
+            // Just a mock unread logic: count how many are success
+            setUnreadCount(latest.filter((t: any) => t.status === 'success').length);
+          }
+        }
+      }
+
     } catch (err) {
-      console.error("Wallet fetch error:", err);
+      console.error("Wallet data fetch error:", err);
     }
   };
 
   /* Load on mount */
   useEffect(() => {
     loadUser();
-    fetchWallet();
+    fetchWalletData();
   }, []);
 
   /* Listen for auth changes */
   useEffect(() => {
     const handleAuth = () => {
       loadUser();
-      fetchWallet();
+      fetchWalletData();
     };
 
     window.addEventListener("authChanged", handleAuth);
@@ -162,11 +182,51 @@ export default function Navbar() {
 
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Notification */}
-            <button className="relative p-2 rounded-xl bg-[hsl(var(--surface))] hover:bg-[hsl(var(--surface-hover))]">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-400" />
-            </button>
+            {/* Notification Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => {
+                  setNotificationsOpen(!notificationsOpen);
+                  if (!notificationsOpen) setUnreadCount(0); // Mark as read when opening
+                }}
+                className="relative p-2 rounded-xl bg-[hsl(var(--surface))] hover:bg-[hsl(var(--surface-hover))]"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-yellow-400 text-black text-[10px] font-bold flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-[#0f1613] border border-[#1f2a26] rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-[#1f2a26] bg-[#0a0f0d] flex justify-between items-center">
+                    <h3 className="font-bold text-white">Recent Transactions</h3>
+                    <Link href="/wallets" onClick={() => setNotificationsOpen(false)} className="text-xs text-emerald-400 hover:underline">View All</Link>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {recentTxns.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-gray-500">No recent activity.</div>
+                    ) : (
+                      recentTxns.map((txn, i) => (
+                        <div key={i} className="p-4 border-b border-[#1f2a26] hover:bg-[#151f1a] transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-medium text-white">{txn.note || txn.type}</p>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(txn.createdAt).toLocaleString()}</p>
+                            </div>
+                            <span className={`text-sm font-bold ${['deposit', 'prize_payout'].includes(txn.type) ? 'text-emerald-400' : 'text-white'}`}>
+                              {['deposit', 'prize_payout'].includes(txn.type) ? '+' : '-'}₹{Number(txn.amount).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Wallet Balance */}
             <Link

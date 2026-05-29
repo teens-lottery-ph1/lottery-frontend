@@ -4,13 +4,29 @@ import { useState, useEffect } from 'react';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
 import Avatar from '../_components/Avatar';
+import { useSocket } from '../../components/SocketProvider';
 
 // Format currency to Indian format
 const formatINR = (value: number) => {
   return value.toLocaleString('en-IN');
 };
 
+// ── Company Wallet types ──────────────────────────────────────────────────────
+interface CompanyWalletData {
+  balance: number;
+  currency: string;
+  updatedAt: string | null;
+}
+
+interface CompanyWalletStats {
+  totalDepositsCollected: number;
+  totalPrizesPaid: number;
+  totalWithdrawalsPaid: number;
+  netRevenue: number;
+}
+
 export default function WalletPage() {
+  const { socket } = useSocket();
   const [walletsList, setWalletsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adjustmentOpen, setAdjustmentOpen] = useState(false);
@@ -22,9 +38,39 @@ export default function WalletPage() {
     note: '',
   });
 
+  // ── Company Wallet State ──────────────────────────────────────────────────
+  const [companyWallet, setCompanyWallet] = useState<CompanyWalletData | null>(null);
+  const [companyStats, setCompanyStats] = useState<CompanyWalletStats | null>(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [fundingOpen, setFundingOpen] = useState(false);
+  const [fundingAmount, setFundingAmount] = useState('');
+  const [isProcessingFunding, setIsProcessingFunding] = useState(false);
+
+  const fetchCompanyWallet = async () => {
+    try {
+      const [walletRes, statsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/company-wallet`, {
+          credentials: 'include',
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/company-wallet/stats`, {
+          credentials: 'include',
+        }),
+      ]);
+      const walletData = await walletRes.json();
+      const statsData = await statsRes.json();
+
+      if (walletData.success) setCompanyWallet(walletData);
+      if (statsData.success) setCompanyStats(statsData.stats);
+    } catch (err) {
+      console.error('[CompanyWallet] Fetch error:', err);
+    } finally {
+      setCompanyLoading(false);
+    }
+  };
+
   const fetchWallets = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/wallets`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/wallet/admin/all`, {
         credentials: "include"
       });
       const data = await res.json();
@@ -39,12 +85,47 @@ export default function WalletPage() {
   };
 
   useEffect(() => {
+    fetchCompanyWallet();
     fetchWallets();
+    // Auto-refresh company wallet every 30 seconds
+    const interval = setInterval(fetchCompanyWallet, 30000);
+
+    // Load Razorpay script dynamically
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      clearInterval(interval);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
+
+  // Listen for Socket.io real-time payment events to refresh balances instantly
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRealtimePayment = () => {
+      console.log("⚡ Live payment event received, refreshing wallets and company balance...");
+      fetchWallets();
+      fetchCompanyWallet();
+    };
+
+    socket.on("payment_updated", handleRealtimePayment);
+    socket.on("new_transaction", handleRealtimePayment);
+
+    return () => {
+      socket.off("payment_updated", handleRealtimePayment);
+      socket.off("new_transaction", handleRealtimePayment);
+    };
+  }, [socket]);
 
   const totalBalance = walletsList.reduce((sum, w) => sum + Number(w.balance || 0), 0);
   const avgBalance = walletsList.length ? totalBalance / walletsList.length : 0;
-  const txnToday = walletsList.length; // Placeholder for real transactions stats
+  const txnToday = walletsList.length;
   const lockedPrizes = walletsList.reduce((sum, w) => sum + Number(w.locked || 0), 0);
 
   const handleOpenAdjustment = (user: any) => {
@@ -92,8 +173,228 @@ export default function WalletPage() {
     }
   };
 
+  const handleCompanyFunding = async () => {
+    const amountVal = Number(fundingAmount);
+    if (!amountVal || amountVal < 50) {
+      alert("Minimum amount to add is ₹50");
+      return;
+    }
+
+    setIsProcessingFunding(true);
+    try {
+      const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/company-wallet/funding/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          amount: amountVal
+        }),
+      });
+      const orderData = await orderRes.json();
+      
+      if (!orderRes.ok || !orderData.order?.id) {
+        throw new Error(orderData.error || "Failed to create company funding order from server.");
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: "Company Wallet",
+        description: "Add Company Funds",
+        order_id: orderData.order.id,
+        handler: async (response: any) => {
+          try {
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/company-wallet/funding/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            
+            if (!verifyRes.ok) {
+              const errData = await verifyRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Server Error during verification`);
+            }
+
+            alert(`Company Wallet funded successfully!`);
+            setFundingOpen(false);
+            setFundingAmount('');
+            fetchCompanyWallet();
+          } catch (err: any) {
+            console.error("Verification error:", err);
+            alert(`Funding verification failed: ${err.message || 'Could not verify payment.'}`);
+          }
+        },
+        prefill: {
+          name: "System Admin",
+          email: "system-admin@lottery.internal"
+        },
+        theme: {
+          color: "#059669"
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (resp: any) {
+        alert(`Payment failed: ${resp.error.description}`);
+      });
+      rzp.open();
+    } catch (error: any) {
+      console.error("Company funding error:", error);
+      alert(`Funding error: ${error.message}`);
+    } finally {
+      setIsProcessingFunding(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
+
+      {/* ── COMPANY WALLET SECTION ─────────────────────────────────────────── */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-[20px] font-bold text-[#111827]">🏦 Company Wallet</h2>
+          {!companyLoading && (
+            <span className="flex items-center gap-1.5 bg-[rgba(22,163,74,0.1)] text-[#16a34a] text-[11px] font-bold px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 bg-[#16a34a] rounded-full animate-pulse" />
+              LIVE
+            </span>
+          )}
+        </div>
+
+        {companyLoading ? (
+          <div className="h-40 bg-white border border-[#e5e7eb] rounded-2xl flex items-center justify-center text-[#6b7280] text-[14px]">
+            Loading company wallet...
+          </div>
+        ) : (
+          <div className="grid grid-cols-[auto_1fr] gap-6">
+
+            {/* Balance Card */}
+            <div
+              className="rounded-2xl p-8 min-w-[280px] flex flex-col justify-between relative overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #1e3a2f 0%, #064e3b 60%, #065f46 100%)' }}
+            >
+              {/* Decorative circle */}
+              <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white opacity-5" />
+              <div className="absolute -right-4 -bottom-10 w-56 h-56 rounded-full bg-white opacity-5" />
+
+              <div className="relative">
+                <p className="text-[#6ee7b7] text-[12px] font-semibold uppercase tracking-widest mb-1">
+                  Company Wallet Balance
+                </p>
+                <p className="text-white text-[42px] font-black leading-none mb-1">
+                  ₹{formatINR(companyWallet?.balance ?? 0)}
+                </p>
+                <p className="text-[#6ee7b7] text-[12px] opacity-70">
+                  {companyWallet?.currency ?? 'INR'} •{' '}
+                  {companyWallet?.updatedAt
+                    ? `Updated ${new Date(companyWallet.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Not initialised yet'}
+                </p>
+              </div>
+
+              <div className="relative mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)] flex items-center justify-between">
+                <p className="text-[#a7f3d0] text-[11px]">
+                  Auto-refreshes every 30 seconds
+                </p>
+                <button
+                  onClick={() => setFundingOpen(true)}
+                  className="bg-[#10b981] hover:bg-[#059669] text-white text-[12px] font-bold py-1.5 px-3 rounded-lg transition-all shadow flex items-center gap-1"
+                >
+                  ➕ Add Funds
+                </button>
+              </div>
+            </div>
+
+            {/* P&L Breakdown */}
+            <div className="grid grid-cols-3 gap-4">
+              {/* Deposits Collected */}
+              <div className="bg-white border border-[#e5e7eb] rounded-2xl p-5 flex flex-col justify-between hover:-translate-y-0.5 transition-all shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[rgba(22,163,74,0.1)] flex items-center justify-center text-xl mb-3">
+                  💰
+                </div>
+                <div>
+                  <p className="text-[26px] font-black text-[#16a34a]">
+                    ₹{formatINR(companyStats?.totalDepositsCollected ?? 0)}
+                  </p>
+                  <p className="text-[12px] text-[#6b7280] mt-1">User Join Level Money</p>
+                </div>
+                <p className="text-[11px] text-[#9ca3af] mt-3">User join level money → Company wallet</p>
+              </div>
+
+              {/* Prizes Paid */}
+              <div className="bg-white border border-[#e5e7eb] rounded-2xl p-5 flex flex-col justify-between hover:-translate-y-0.5 transition-all shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[rgba(220,38,38,0.1)] flex items-center justify-center text-xl mb-3">
+                  🏆
+                </div>
+                <div>
+                  <p className="text-[26px] font-black text-[#dc2626]">
+                    ₹{formatINR(companyStats?.totalPrizesPaid ?? 0)}
+                  </p>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Total Prizes Paid</p>
+                </div>
+                <p className="text-[11px] text-[#9ca3af] mt-3">Level completion payouts</p>
+              </div>
+
+              {/* Net Revenue */}
+              <div
+                className="rounded-2xl p-5 flex flex-col justify-between hover:-translate-y-0.5 transition-all shadow-sm border"
+                style={{
+                  background: (companyStats?.netRevenue ?? 0) >= 0
+                    ? 'rgba(22,163,74,0.05)'
+                    : 'rgba(220,38,38,0.05)',
+                  borderColor: (companyStats?.netRevenue ?? 0) >= 0
+                    ? 'rgba(22,163,74,0.2)'
+                    : 'rgba(220,38,38,0.2)',
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3"
+                  style={{
+                    background: (companyStats?.netRevenue ?? 0) >= 0
+                      ? 'rgba(22,163,74,0.15)'
+                      : 'rgba(220,38,38,0.15)',
+                  }}
+                >
+                  {(companyStats?.netRevenue ?? 0) >= 0 ? '📈' : '📉'}
+                </div>
+                <div>
+                  <p
+                    className="text-[26px] font-black"
+                    style={{
+                      color: (companyStats?.netRevenue ?? 0) >= 0 ? '#16a34a' : '#dc2626',
+                    }}
+                  >
+                    ₹{formatINR(Math.abs(companyStats?.netRevenue ?? 0))}
+                  </p>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Net Revenue</p>
+                </div>
+                <p className="text-[11px] text-[#9ca3af] mt-3">
+                  Deposits − Prizes − Withdrawals
+                </p>
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
+
+      {/* DIVIDER */}
+      <div className="border-t border-[#e5e7eb]" />
+
+      {/* ── USER WALLETS SECTION ───────────────────────────────────────────── */}
+      <div>
+        <h2 className="text-[20px] font-bold text-[#111827] mb-4">👛 User Wallets</h2>
+
       {/* STAT CARDS */}
       <div className="grid grid-cols-4 gap-6">
         <StatCard
@@ -120,6 +421,7 @@ export default function WalletPage() {
           label="Locked Prizes"
           accentColor="#dc2626"
         />
+      </div>
       </div>
 
       {/* WALLET TABLE + ADJUSTMENT PANEL */}
@@ -341,6 +643,41 @@ export default function WalletPage() {
           </div>
         )}
       </div>
+
+      {/* ── COMPANY FUNDING MODAL ─────────────────────────────────────────── */}
+      {fundingOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-[#e5e7eb] rounded-2xl w-full max-w-md p-6 relative shadow-xl">
+            <button
+              onClick={() => setFundingOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-lg font-bold"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-[#111827]">🏦 Add Company Funds</h2>
+            <div className="mb-6">
+              <label className="block text-sm text-[#4b5563] mb-2">Amount (Min ₹50)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                <input
+                  type="number"
+                  value={fundingAmount}
+                  onChange={(e) => setFundingAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-xl py-3 pl-8 pr-4 text-[#111827] focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleCompanyFunding}
+              disabled={isProcessingFunding || !fundingAmount || Number(fundingAmount) < 50}
+              className="w-full bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 disabled:hover:bg-[#10b981] text-white font-bold py-3 rounded-xl transition-all shadow-md"
+            >
+              {isProcessingFunding ? "Processing..." : "Proceed to Pay"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

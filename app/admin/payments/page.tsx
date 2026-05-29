@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import StatCard from '../_components/StatCard';
 import Badge from '../_components/Badge';
 import Avatar from '../_components/Avatar';
+import { useSocket } from '../../components/SocketProvider';
 
 // Format currency to Indian format
 const formatINR = (value: number) => {
@@ -21,6 +22,8 @@ const formatDateTime = (date: Date) => {
 };
 
 export default function PaymentsPage() {
+  const { socket } = useSocket();
+
   // API CALL: Backend endpoint to fetch transactions with filters
   // GET /api/admin/payments/transactions?fromDate=&toDate=&type=&status=
   const [fromDate, setFromDate] = useState('2026-02-18');
@@ -106,6 +109,36 @@ export default function PaymentsPage() {
     };
     fetchStats();
   }, []);
+
+  // Listen for Socket.io real-time payment/stats updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewTransaction = (newTxn: any) => {
+      console.log("⚡ Live transaction received on admin panel:", newTxn);
+      setTransactions((prev) => {
+        // Prevent duplicate transaction items in state
+        if (prev.some((t) => t.id === newTxn.id)) return prev;
+        return [newTxn, ...prev];
+      });
+    };
+
+    const handleStatsUpdated = (stats: any) => {
+      console.log("⚡ Live payment statistics updated on admin panel:", stats);
+      setTotalRevenue(Number(stats.totalRevenue) || 0);
+      setTotalDeposits(Number(stats.totalDeposits) || 0);
+      setTotalWithdrawals(Number(stats.totalWithdrawals) || 0);
+      setPendingAmount(Number(stats.totalPending) || 0);
+    };
+
+    socket.on("new_transaction", handleNewTransaction);
+    socket.on("stats_updated", handleStatsUpdated);
+
+    return () => {
+      socket.off("new_transaction", handleNewTransaction);
+      socket.off("stats_updated", handleStatsUpdated);
+    };
+  }, [socket]);
 
 
   // CSV Export
