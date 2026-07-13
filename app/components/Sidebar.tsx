@@ -23,6 +23,7 @@ import { useState } from "react";
 const mainNav = [
   { label: "Home", icon: Home, href: "/" },
   { label: "Games", icon: Gamepad2, href: "/games" },
+  { label: "My Tickets", icon: Ticket, href: "/my-tickets" },
   { label: "Results", icon: Trophy, href: "/results" },
   { label: "Levels & Rewards", icon: Crown, href: "/levels" },
   { label: "Wallet", icon: Wallet, href: "/wallets" },

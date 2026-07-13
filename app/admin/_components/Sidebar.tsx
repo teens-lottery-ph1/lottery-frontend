@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-
+import { useEffect, useState } from "react";
 interface SidebarItem {
   label: string;
   href: string;
@@ -64,6 +64,28 @@ const sidebarSections = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+    const [admin, setAdmin] = useState<any>(null); // ✅ FIX
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/me`,
+          {
+            credentials: "include",
+          }
+        );
+
+        const data = await res.json();
+        setAdmin(data.user);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchAdmin();
+  }, []);
+
 
   const isActive = (href: string) => {
     return pathname.startsWith(href);
@@ -122,18 +144,30 @@ export default function Sidebar() {
       </nav>
 
       {/* Admin Profile Footer */}
-      <div className="p-4 border-t border-[#e5e7eb]">
-        <div className="bg-[#f0f1f3] rounded-xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#fef3c7] flex items-center justify-center text-[#d97706] font-bold text-[13px]">
-            A
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-[#1f2937]">Admin</p>
-            <p className="text-[11px] text-[#6b7280] truncate">Super Administrator</p>
-          </div>
-          <span className="text-lg">🚪</span>
-        </div>
+      {/* Admin Profile Footer */}
+<div className="p-4 border-t border-[#e5e7eb]">
+  <Link href="/admin/profile">
+    <div className="bg-[#f0f1f3] rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-[#e5e7eb] transition">
+      
+      {/* Avatar */}
+      <div className="w-10 h-10 rounded-full bg-[#fef3c7] flex items-center justify-center text-[#d97706] font-bold text-[13px]">
+        {admin?.name ? admin.name.charAt(0).toUpperCase() : "A"}
       </div>
+
+      {/* Name */}
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-[#1f2937]">
+          {admin?.name || "Admin"}
+        </p>
+        <p className="text-[11px] text-[#6b7280] truncate">
+          {admin?.role || ""}
+        </p>
+      </div>
+
+      <span className="text-lg">👤</span>
+    </div>
+  </Link>
+</div>
     </aside>
   );
 }
